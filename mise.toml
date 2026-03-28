@@ -1,2 +1,3 @@
 [tools]
+powershell = "7"
 python = "3.13"

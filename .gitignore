@@ -28,8 +28,8 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-*.manifest
-*.spec
+# *.manifest
+# *.spec
 
 # Unit test / coverage reports
 htmlcov/
@@ -70,3 +70,4 @@ Thumbs.db
 .ipynb_checkpoints
 
 *.pt
+.tmp*
