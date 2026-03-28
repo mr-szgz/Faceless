@@ -1,4 +1,4 @@
-function Label-Faceless {
+function Invoke-Label-Faceless {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
