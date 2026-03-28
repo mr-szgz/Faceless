@@ -1,0 +1,257 @@
+# Classes
+names:
+  66: Briefcase
+  155: Diaper
+  162: Doll
+  447: Seat belt
+  503: Suitcase
+  1: Adhesive tape
+  0: Accordion
+  2: Aircraft
+  3: Airplane
+  4: Alarm clock
+  6: Ambulance
+  13: Auto part
+  14: Axe
+  15: Backpack
+  20: Balloon
+  22: Band-aid
+  23: Banjo
+  24: Barge
+  25: Barrel
+  32: Beaker
+  36: Beehive
+  42: Bicycle
+  43: Bicycle helmet
+  44: Bicycle wheel
+  45: Bidet
+  46: Billboard
+  48: Binoculars
+  50: Blender
+  52: Boat
+  53: Bomb
+  54: Book
+  57: Bottle
+  58: Bottle opener
+  60: Bowl
+  62: Box
+  68: Bronze sculpture
+  73: Bus
+  79: Cake stand
+  80: Calculator
+  82: Camera
+  83: Can opener
+  85: Candle
+  87: Cannon
+  88: Canoe
+  90: Car
+  91: Carnivore
+  93: Cart
+  94: Cassette deck
+  95: Castle
+  97: Cat furniture
+  100: Ceiling fan
+  101: Cello
+  103: Chainsaw
+  109: Chime
+  110: Chisel
+  111: Chopsticks
+  112: Christmas tree
+  113: Clock
+  118: Cocktail shaker
+  121: Coffee cup
+  123: Coffeemaker
+  124: Coin
+  126: Common sunflower
+  127: Computer keyboard
+  128: Computer monitor
+  129: Computer mouse
+  130: Container
+  133: Cooking spray
+  134: Corded phone
+  145: Crutch
+  149: Cutting board
+  150: Dagger
+  156: Dice
+  157: Digital clock
+  170: Drill (Tool)
+  172: Drinking straw
+  173: Drum
+  180: Envelope
+  181: Eraser
+  183: Facial tissue holder
+  187: Fax
+  190: Fire hydrant
+  193: Flag
+  194: Flashlight
+  195: Flower
+  196: Flowerpot
+  197: Flute
+  200: Food processor
+  204: Fork
+  205: Fountain
+  208: French horn
+  211: Frying pan
+  214: Gas stove
+  224: Gondola
+  228: Grinder
+  230: Guitar
+  231: Hair dryer
+  232: Hair spray
+  234: Hammer
+  236: Hand dryer
+  238: Handgun
+  240: Harmonica
+  241: Harp
+  242: Harpsichord
+  245: Heater
+  247: Helicopter
+  252: Home appliance
+  253: Honeycomb
+  272: Humidifier
+  278: Ipod
+  285: Jet ski
+  286: Jug
+  289: Kettle
+  296: Knife
+  298: Ladder
+  299: Ladle
+  302: Land vehicle
+  303: Lantern
+  304: Laptop
+  305: Lavender (Plant)
+  308: Light bulb
+  309: Light switch
+  310: Lighthouse
+  311: Lily
+  312: Limousine
+  318: Luggage and bags
+  324: Maple
+  325: Maracas
+  328: Measuring cup
+  329: Mechanical fan
+  330: Medical equipment
+  331: Microphone
+  332: Microwave oven
+  336: Missile
+  337: Mixer
+  338: Mixing bowl
+  339: Mobile phone
+  342: Motorcycle
+  343: Mouse
+  348: Musical instrument
+  349: Musical keyboard
+  350: Nail (Construction)
+  353: Oboe
+  355: Office supplies
+  357: Organ (Musical Instrument)
+  360: Oven
+  363: Paddle
+  364: Palm tree
+  367: Paper cutter
+  368: Paper towel
+  369: Parachute
+  370: Parking meter
+  376: Pen
+  377: Pencil case
+  378: Pencil sharpener
+  380: Perfume
+  382: Personal care
+  383: Personal flotation device
+  384: Piano
+  385: Picnic basket
+  386: Picture frame
+  390: Pitcher (Container)
+  392: Pizza cutter
+  393: Plant
+  394: Plastic bag
+  395: Plate
+  396: Platter
+  397: Plumbing fixture
+  403: Poster
+  405: Power plugs and sockets
+  406: Pressure cooker
+  408: Printer
+  414: Radish
+  415: Ratchet (Device)
+  419: Refrigerator
+  420: Remote control
+  423: Rifle
+  424: Ring binder
+  425: Rocket
+  427: Rose
+  429: Ruler
+  431: Salt and pepper shakers
+  434: Saucer
+  435: Saxophone
+  436: Scale
+  438: Scissors
+  439: Scoreboard
+  441: Screwdriver
+  442: Sculpture
+  448: Segway
+  449: Serving tray
+  450: Sewing machine
+  457: Shotgun
+  464: Skull
+  467: Slow cooker
+  472: Snowman
+  474: Snowplow
+  475: Soap dispenser
+  480: Spatula
+  481: Spice rack
+  483: Spoon
+  490: Stapler
+  493: Stethoscope
+  495: Stop sign
+  497: Street light
+  498: Stretcher
+  500: Submarine
+  512: Sword
+  513: Syringe
+  516: Tablet computer
+  517: Tableware
+  519: Tank
+  520: Tap
+  522: Taxi
+  524: Teapot
+  525: Teddy bear
+  526: Telephone
+  527: Television
+  535: Tin can
+  536: Tire
+  537: Toaster
+  539: Toilet paper
+  541: Tool
+  542: Toothbrush
+  543: Torch
+  547: Toy
+  548: Traffic light
+  549: Traffic sign
+  550: Train
+  555: Tripod
+  556: Trombone
+  558: Truck
+  559: Trumpet
+  563: Unicycle
+  564: Van
+  565: Vase
+  567: Vehicle
+  568: Vehicle registration plate
+  569: Violin
+  572: Waffle iron
+  573: Wall clock
+  575: Washing machine
+  576: Waste container
+  577: Watch
+  578: Watercraft
+  580: Weapon
+  582: Wheel
+  583: Wheelchair
+  584: Whisk
+  585: Whiteboard
+  586: Willow
+  590: Wine glass
+  591: Wine rack
+  593: Wok
+  598: Wrench
