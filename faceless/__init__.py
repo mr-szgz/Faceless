@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import argparse
+import glob
 import os
 from pathlib import Path
+import re
 import subprocess
 import shutil
 from typing import Literal
 import tqdm
 from ultralytics import YOLO
+from .userdata import get_directories
 
 
 def parse_yaml_id_name_map(labels_file: Path) -> dict[int, str]:
@@ -42,25 +45,26 @@ def normalize_label_name(name: str) -> str:
     return "".join(char for char in name.lower() if char.isalnum())
 
 
-def resolve_user_cache_dir(app_name: str = "faceless") -> Path:
+def resolve_user_data_dir(app_name: str = "faceless") -> Path:
+    try:
+        local_root = get_directories().get("Local")
+        if local_root:
+            return (Path(local_root) / app_name).expanduser().resolve()
+    except Exception:
+        pass
+
     home = Path.home()
     if os.name == "nt":
-        cache_root = os.getenv("LOCALAPPDATA") or os.getenv("APPDATA")
-        if cache_root:
-            return Path(cache_root) / app_name
-        return home / f".{app_name}"
+        return (home / "AppData" / "Local" / app_name).expanduser().resolve()
     if os.sys.platform == "darwin":
-        return home / "Library" / "Caches" / app_name
-    xdg_cache_home = os.getenv("XDG_CACHE_HOME")
-    if xdg_cache_home:
-        return Path(xdg_cache_home) / app_name
-    return home / ".cache" / app_name
+        return (home / "Library" / "Application Support" / app_name).expanduser().resolve()
+    return (home / ".local" / "share" / app_name).expanduser().resolve()
 
 
 def resolve_model_path(model_name: str) -> Path:
-    cache_dir = resolve_user_cache_dir() / "models"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    model_path = cache_dir / model_name
+    model_dir = resolve_user_data_dir() / "models"
+    model_dir.mkdir(parents=True, exist_ok=True)
+    model_path = model_dir / model_name
 
     if model_path.is_file():
         return model_path
@@ -76,6 +80,37 @@ def resolve_model_path(model_name: str) -> Path:
             return model_path
 
     return model_path
+
+
+def resolve_yolo_source_pattern(source: Path) -> str:
+    # Use an escaped glob pattern so literal [] in folder names don't break file discovery.
+    escaped_source = glob.escape(str(source))
+    if escaped_source.endswith(("\\", "/")):
+        return f"{escaped_source}*.*"
+    return f"{escaped_source}{os.sep}*.*"
+
+
+def build_legacy_index_label_map(labels: Path, source_files: list[Path]) -> dict[str, Path]:
+    """
+    Backward compatibility for runs that wrote labels as image{index}.txt.
+    Map those labels back to source file stems using sorted source-file order.
+    """
+    index_pattern = re.compile(r"^image(\d+)\.txt$", re.IGNORECASE)
+    label_map: dict[str, Path] = {}
+
+    if not labels.is_dir() or not source_files:
+        return label_map
+
+    for label_file in labels.glob("*.txt"):
+        match = index_pattern.match(label_file.name)
+        if not match:
+            continue
+        index = int(match.group(1))
+        if 0 <= index < len(source_files):
+            source_stem = source_files[index].stem
+            # Keep direct <stem>.txt precedence by only filling missing fallback entries.
+            label_map.setdefault(source_stem, label_file)
+    return label_map
 
 
 def update_label_names_from_model(model: YOLO, label_names: dict[int, str]) -> None:
@@ -319,7 +354,7 @@ def main() -> None:
         if model is None:
             model = YOLO(str(model_path))
         model.predict(
-            source=str(source),
+            source=resolve_yolo_source_pattern(source),
             conf=conf,
             save=False,
             save_txt=True,
@@ -331,11 +366,13 @@ def main() -> None:
             vid_stride=50,
         )
 
-    for file_path in source.iterdir():
-        if not file_path.is_file():
-            continue
+    source_files = sorted(file_path for file_path in source.iterdir() if file_path.is_file())
+    legacy_index_label_map = build_legacy_index_label_map(labels=labels, source_files=source_files)
 
+    for file_path in source_files:
         label_path: Path = labels / f"{file_path.stem}.txt"
+        if not label_path.is_file():
+            label_path = legacy_index_label_map.get(file_path.stem, label_path)
 
         label_counts = parse_label_counts(label_path)
         has_girl_or_woman = any(class_id in GIRL_OR_WOMAN_CLASSES for class_id in label_counts)
