@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.2.0] - 2026-03-28
 ### Added
 - Added `-Auto`/`--auto`/`-a` to route non-matching media into label-based subfolders under the configured `-Directory`/`--directory` root (default `noface`), while unlabeled items are moved to the directory root.
 - Added `-Group`/`--group`/`-g` to route non-matching media into group-based subfolders under `-Directory` using prioritized YAML definitions in `faceless/labels/*.yaml` (for example `1_People`, `2_Clothing`).
