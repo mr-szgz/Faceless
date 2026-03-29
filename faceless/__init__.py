@@ -7,23 +7,33 @@ import tqdm
 from ultralytics import YOLO
 
 
-def load_label_names() -> dict[int, str]:
-    """Load id-to-name mapping from labels/Labels.yaml without extra deps."""
-    labels_file = Path(__file__).resolve().parent.parent / "labels" / "Labels.yaml"
+def parse_yaml_id_name_map(labels_file: Path) -> dict[int, str]:
     names: dict[int, str] = {}
-    try:
-        for line in labels_file.read_text(encoding="utf-8", errors="replace").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or ":" not in line:
-                continue
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip().strip("'\"")
-            if key.isdigit():
-                names[int(key)] = value
-    except FileNotFoundError:
-        return {}
+    for line in labels_file.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key = key.strip()
+        value = value.strip().strip("'\"")
+        if key.isdigit():
+            names[int(key)] = value
     return names
+
+
+def load_label_names() -> dict[int, str]:
+    """Load id-to-name mapping from known YAML locations without extra deps."""
+    repo_root = Path(__file__).resolve().parent.parent
+    candidate_files = (
+        repo_root / "labels" / "Labels.yaml",
+        Path(__file__).resolve().parent / "labels" / "Labels.yaml",
+    )
+    for labels_file in candidate_files:
+        if labels_file.is_file():
+            names = parse_yaml_id_name_map(labels_file)
+            if names:
+                return names
+    return {}
 
 
 def parse_label_counts(label_path: Path) -> dict[int, int]:
@@ -144,8 +154,12 @@ def main() -> None:
     auto_directory = AutoDirectory
     group_directory = GroupDirectory
     group_definitions = load_group_definitions() if group_directory else []
+    model = None
+
     if ForceLabels or not labels.is_dir():
-        YOLO(MODEL_NAME).predict(
+        if model is None:
+            model = YOLO(MODEL_NAME)
+        model.predict(
             source=str(source),
             conf=conf,
             save=False,
@@ -174,7 +188,16 @@ def main() -> None:
         if auto_directory:
             if label_counts:
                 primary_class_id = sorted(label_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
-                folder_name = label_names.get(primary_class_id, f"class_{primary_class_id}")
+                folder_name = label_names.get(primary_class_id)
+                if folder_name is None:
+                    if model is None:
+                        model = YOLO(MODEL_NAME)
+                    model_names = model.names
+                    if isinstance(model_names, dict):
+                        label_names.update({int(key): str(value) for key, value in model_names.items()})
+                    else:
+                        label_names.update({index: str(value) for index, value in enumerate(model_names)})
+                    folder_name = label_names.get(primary_class_id, f"class_{primary_class_id}")
                 destination_path = Destination / sanitize_folder_name(folder_name)
             else:
                 destination_path = Destination
