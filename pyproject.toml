@@ -18,6 +18,7 @@ dev = [
     "pip", # TODO: ensure pip stays upgraded
     "cibuildwheel",
     "pyinstaller>=6",
+    "pytest>=8",
 ]
 
 [project.scripts]
@@ -29,5 +30,4 @@ include = ["faceless*"]
 
 [tool.setuptools.package-data]
 faceless = ["labels/*.yaml"]
-
 

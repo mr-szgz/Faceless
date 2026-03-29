@@ -15,3 +15,9 @@ run = "pwsh -NoProfile -File scripts/Invoke-Initialization.ps1"
 [tasks.devel]
 run = "pwsh -NoProfile -File scripts/Invoke-Devel.ps1"
 # TODO: check if mise supports task dependencies or chains and make init upstream of devel
+
+[tasks.test]
+run = ".venv\\Scripts\\python.exe -m pytest -q"
+
+[tasks.regression]
+run = "pwsh -NoProfile -File scripts/Invoke-Regression-Faceless.ps1"

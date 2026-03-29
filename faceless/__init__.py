@@ -10,7 +10,12 @@ import shutil
 import sys
 from typing import Literal
 from ultralytics import YOLO
-from .userdata import add_userdata_subparser, get_directories, handle_userdata_subparser, setup_logging
+from .userdata import (
+    add_userdata_subparser,
+    get_directories,
+    handle_userdata_subparser,
+    setup_logging,
+)
 
 
 logger = logging.getLogger("faceless")
@@ -173,6 +178,23 @@ def resolve_required_class_ids(
         human_face_classes = {fallback_human_face_class}
 
     return girl_or_woman_classes, human_face_classes, model
+
+
+def should_generate_labels(force_labels: bool, labels: Path, source_files: list[Path]) -> bool:
+    if force_labels or not labels.is_dir():
+        return True
+    if not source_files:
+        return False
+
+    legacy_index_label_map = build_legacy_index_label_map(labels=labels, source_files=source_files)
+    for file_path in source_files:
+        direct_label_path = labels / f"{file_path.stem}.txt"
+        if direct_label_path.is_file():
+            continue
+        if file_path.stem in legacy_index_label_map:
+            continue
+        return True
+    return False
 
 
 def parse_label_counts(label_path: Path) -> dict[int, int]:
@@ -369,6 +391,10 @@ def parse_arguments() -> tuple[
     Destination: Path | None = None
     if path is not None:
         source = Path(path).expanduser().resolve()
+        if not source.exists():
+            run_parser.error(f"Source path does not exist: {source}")
+        if not source.is_dir():
+            run_parser.error(f"Source path is not a directory: {source}")
         labels = source / "labels"
         Destination = source / Directory
 
@@ -439,26 +465,39 @@ def main() -> None:
             fallback_human_face_class=HUMAN_FACE_CLASS,
         )
 
-        if ForceLabels or not labels.is_dir():
+        source_files = sorted(file_path for file_path in source.iterdir() if file_path.is_file())
+        logger.info("Discovered %d source file(s).", len(source_files))
+
+        generate_labels = should_generate_labels(
+            force_labels=ForceLabels,
+            labels=labels,
+            source_files=source_files,
+        )
+
+        if generate_labels:
             logger.info("Generating labels in %s", labels)
             if model is None:
                 model = YOLO(str(model_path))
-            model.predict(
-                source=resolve_yolo_source_pattern(source),
-                conf=conf,
-                project=str(source),
-                name=".",
-                vid_stride=50, # controls frame skip
-                save=False,
-                save_txt=True,
-                save_conf=True, 
-                stream=True,
-                exist_ok=True,
-                verbose=True, # ALWAYS True. Not releated to argparse.
-            )
-
-        source_files = sorted(file_path for file_path in source.iterdir() if file_path.is_file())
-        logger.info("Discovered %d source file(s).", len(source_files))
+            try:
+                for _ in model.predict(
+                    source=resolve_yolo_source_pattern(source),
+                    conf=conf,
+                    project=str(source),
+                    name=".",
+                    vid_stride=50, # controls frame skip
+                    save=False,
+                    save_txt=True,
+                    save_conf=True,
+                    stream=True,
+                    exist_ok=True,
+                    verbose=True, # ALWAYS True. Not related to argparse.
+                ):
+                    pass
+            except Exception as error:
+                logger.error("Label generation failed for source=%s labels=%s", source, labels)
+                raise RuntimeError("YOLO label generation failed.") from error
+        else:
+            logger.info("Skipping label generation: existing labels detected for all source files.")
         legacy_index_label_map = build_legacy_index_label_map(labels=labels, source_files=source_files)
 
         moved_count = 0
