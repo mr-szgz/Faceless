@@ -492,7 +492,6 @@ version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "argparse" },
-    { name = "jinja2" },
     { name = "tqdm" },
     { name = "ultralytics" },
 ]
@@ -510,7 +509,6 @@ requires-dist = [
     { name = "argparse", specifier = ">=1.4.0" },
     { name = "build", marker = "extra == 'dev'" },
     { name = "cibuildwheel", marker = "extra == 'dev'" },
-    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "pyinstaller", marker = "extra == 'dev'", specifier = ">=6" },
     { name = "tqdm" },
     { name = "ultralytics" },

@@ -1,80 +1,42 @@
 # Faceless
 
-Faceless is a CLI tool that uses YOLO labels to move files that do **not** contain both:
+Faceless analyzes images and video using Ultralytics YOLO to segregate faceless media and/or group media into YOLO labelled folders.
 
-- a `girl`/`woman` class
-- a `human face` class
+## Install
 
-By default, unmatched files are moved to `noface` inside your source folder.
-
-## Model Description
-
-Faceless runs inference with `yolov8n-oiv7.pt` and reads YOLO label files from `<source>/labels`.
-
-- If labels are missing, it generates them first.
-- If labels already exist, it reuses them.
-- If a file does not have both required classes, it is moved.
-
-## Intended Uses & Limitations
-
-### Intended Uses
-
-- Sorting large image folders by a simple class rule.
-- Quickly separating images that do not match your target content.
-
-### Limitations
-
-- File moves are destructive to the original folder layout.
-- The tool checks class IDs from labels; detection quality depends on the model output.
-- The source folder may contain non-image files; items without matching labels can still be moved.
-
-## How to Use
-
-### 1) Download the release
-
-Download the latest Windows binary from GitHub Releases:
+Download Binary for your system or install .whl from latest Release
 
 - <https://github.com/mr-szgz/faceless/releases>
 
-Download `faceless.exe`.
+## Usage
 
-No Python setup is required.
-
-### 2) Run in PowerShell
+**Quickstart with..**
 
 ```bash
-.\faceless.exe "<path-to-images>"
+.\faceless "<path-to-images>" -Auto
 ```
-
-## Common Commands
-
-Use PowerShell-style flags or long flags.
 
 ```bash
-# positional path
-.\faceless.exe "S:\Images\input"
+$ faceless --help                                                                                                                                                                                                         
+usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Directory DIRECTORY] [-Auto | -Group] [path]
 
-# explicit path flag
-.\faceless.exe "S:\Images\input"
+positional arguments:
+  path                  Source directory containing images
 
-# force label regeneration
-.\faceless.exe "S:\Images\input" -Force
-
-# change confidence threshold (default: 0.2)
-.\faceless.exe "S:\Images\input" -Conf 0.2
-
-# change destination folder name (default: noface)
-.\faceless.exe "S:\Images\input" -Directory "faceless"
-
-# split non-matching files into per-label folders
-.\faceless.exe "S:\Images\input" -Auto
-
-# split non-matching files into grouped folders from faceless/labels/*.yaml
-.\faceless.exe "S:\Images\input" -Group
+options:
+  -h, --help            show this help message and exit
+  -Path PATH_OPTION, --path PATH_OPTION
+                        Source directory containing images
+  -Label, --label, -Force, --force
+                        Force regeneration of labels
+  -Conf CONF, --conf CONF
+                        Model confidence threshold
+  -Directory DIRECTORY, --directory DIRECTORY
+                        Output directory name for moved files (default: noface)
+  -Auto, --auto, -a     Move non-matching files into per-label folders under the output directory
+  -Group, --group, -g   Move non-matching files into grouped folders under the output directory based on faceless/labels/*.yaml priority
 ```
 
-## Output
+## Changes
 
-- Labels are stored in `<source>/labels`.
-- Unmatched files are moved to `<source>/<directory>` (default: `<source>/noface`).
-- With `-Auto` or `-Group`, unmatched files are moved into subfolders under the destination directory.
+See [CHANGELOG.md](./CHANGELOG.md) for release notes and version history.
