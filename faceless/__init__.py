@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 import argparse
 import glob
+import logging
 import os
 from pathlib import Path
 import re
 import subprocess
 import shutil
+import sys
 from typing import Literal
-import tqdm
 from ultralytics import YOLO
-from .userdata import get_directories
+from .userdata import add_userdata_subparser, get_directories, handle_userdata_subparser, setup_logging
+
+
+logger = logging.getLogger("faceless")
+DEFAULT_MODEL_NAME = "yolov8n-oiv7.pt"
 
 
 def parse_yaml_id_name_map(labels_file: Path) -> dict[int, str]:
@@ -249,7 +254,7 @@ def prompt_yes_no(prompt: str, default_yes: bool) -> bool:
             return True
         if response in {"n", "no"}:
             return False
-        print("Please answer with y or n.")
+        logger.warning("Please answer with y or n.")
 
 
 def open_directory_in_explorer(path: Path) -> None:
@@ -262,7 +267,7 @@ def open_directory_in_explorer(path: Path) -> None:
             subprocess.run([opener, str(path)], check=False)
             return
     except Exception as error:
-        print(f"Could not open {path}: {error}")
+        logger.error("Could not open %s: %s", path, error)
 
 
 def prompt_open_folders(source: Path, labels: Path) -> None:
@@ -277,13 +282,26 @@ def prompt_open_folders(source: Path, labels: Path) -> None:
             if labels.is_dir():
                 open_directory_in_explorer(labels)
             else:
-                print(f"Labels folder does not exist: {labels}")
+                logger.warning("Labels folder does not exist: %s", labels)
     except (EOFError, KeyboardInterrupt):
-        print()
+        logger.info("Folder prompt cancelled.")
 
 
-def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], int, bool, float, Path, Path, Path, bool, bool]:
-    MODEL_NAME = "yolov8n-oiv7.pt"
+def parse_arguments() -> tuple[
+    Literal["yolov8n-oiv7.pt"],
+    set[int],
+    int,
+    bool,
+    float,
+    Path | None,
+    Path | None,
+    Path | None,
+    bool,
+    bool,
+    bool,
+    argparse.Namespace,
+]:
+    MODEL_NAME = DEFAULT_MODEL_NAME
     GIRL_OR_WOMAN_CLASSES: set[int] = {216, 594}
     HUMAN_FACE_CLASS = 264
 
@@ -292,33 +310,82 @@ def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], int, bool, 
     Directory = "noface"
 
     parser = argparse.ArgumentParser(prog="faceless")
-    parser.add_argument("path", nargs="?", help="Source directory containing images")
-    parser.add_argument("-Path", "--path", dest="path_option", help="Source directory containing images")
-    parser.add_argument("-Label", "--label", "-Force", "--force", action="store_true", dest="force_labels", help="Force regeneration of labels")
-    parser.add_argument("-Conf", "--conf", type=float, default=Conf, help="Model confidence threshold")
-    parser.add_argument("-Directory", "--directory", help=f"Output directory name for moved files (default: {Directory})")
-    move_augment_group = parser.add_mutually_exclusive_group()
+    subparsers = parser.add_subparsers(dest="command")
+    run_parser = subparsers.add_parser("run", help="Run image filtering")
+    run_parser.add_argument("path", nargs="?", help="Source directory containing images")
+    run_parser.add_argument("-Path", "--path", dest="path_option", help="Source directory containing images")
+    run_parser.add_argument("-Label", "--label", "-Force", "--force", action="store_true", dest="force_labels", help="Force regeneration of labels")
+    run_parser.add_argument("-Conf", "--conf", type=float, default=Conf, help="Model confidence threshold")
+    run_parser.add_argument("-Directory", "--directory", help=f"Output directory name for moved files (default: {Directory})")
+    run_parser.add_argument(
+        "-Verbose",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        help="Enable verbose logging in console and log files",
+    )
+    move_augment_group = run_parser.add_mutually_exclusive_group()
     move_augment_group.add_argument("-Auto", "--auto", "-a", action="store_true", dest="auto_directory", help="Move non-matching files into per-label folders under the output directory")
     move_augment_group.add_argument("-Group", "--group", "-g", action="store_true", dest="group_directory", help="Move non-matching files into grouped folders under the output directory based on faceless/labels/*.yaml priority")
+    add_userdata_subparser(subparsers)
 
-    args = parser.parse_args()
+    argv = sys.argv[1:]
+    userdata_flags = {"-Info", "--info", "-Logs", "--logs", "-Tail", "--tail"}
+    if argv and argv[0] in userdata_flags:
+        argv = ["userdata", *argv]
+    elif not argv or argv[0] not in {"run", "userdata", "-h", "--help"}:
+        argv = ["run", *argv]
+    args = parser.parse_args(argv)
+
+    if args.command == "userdata":
+        return (
+            MODEL_NAME,
+            GIRL_OR_WOMAN_CLASSES,
+            HUMAN_FACE_CLASS,
+            ForceLabels,
+            Conf,
+            None,
+            None,
+            None,
+            False,
+            False,
+            False,
+            args,
+        )
 
     path = args.path_option or args.path
     if path is None:
-        parser.error("Source path is required. Use -Path/--path or pass it positionally.")
-
+        run_parser.error("Source path is required. Use -Path/--path or pass it positionally.")
     ForceLabels = args.force_labels
     Conf = args.conf
     if args.directory is not None:
         Directory = args.directory
     AutoDirectory = args.auto_directory
     GroupDirectory = args.group_directory
+    Verbose = args.verbose
 
-    source: Path = Path(path).expanduser().resolve()
-    labels: Path = source / "labels"
-    Destination: Path = source / Directory
+    source: Path | None = None
+    labels: Path | None = None
+    Destination: Path | None = None
+    if path is not None:
+        source = Path(path).expanduser().resolve()
+        labels = source / "labels"
+        Destination = source / Directory
 
-    return MODEL_NAME, GIRL_OR_WOMAN_CLASSES, HUMAN_FACE_CLASS, ForceLabels, Conf, source, labels, Destination, AutoDirectory, GroupDirectory
+    return (
+        MODEL_NAME,
+        GIRL_OR_WOMAN_CLASSES,
+        HUMAN_FACE_CLASS,
+        ForceLabels,
+        Conf,
+        source,
+        labels,
+        Destination,
+        AutoDirectory,
+        GroupDirectory,
+        Verbose,
+        args,
+    )
 
 def main() -> None:
     (
@@ -332,80 +399,113 @@ def main() -> None:
         Destination,
         AutoDirectory,
         GroupDirectory,
+        Verbose,
+        args,
     ) = parse_arguments()
-    model_path = resolve_model_path(MODEL_NAME)
 
-    label_names = load_label_names()
-    auto_directory = AutoDirectory
-    group_directory = GroupDirectory
-    group_definitions = load_group_definitions() if group_directory else []
-    (
-        GIRL_OR_WOMAN_CLASSES,
-        HUMAN_FACE_CLASSES,
-        model,
-    ) = resolve_required_class_ids(
-        model_name=str(model_path),
-        label_names=label_names,
-        fallback_girl_or_woman_classes=GIRL_OR_WOMAN_CLASSES,
-        fallback_human_face_class=HUMAN_FACE_CLASS,
+    if handle_userdata_subparser(args):
+        return
+
+    if source is None or labels is None or Destination is None:
+        raise RuntimeError("Source, labels, and destination paths must be set before processing.")
+
+    _, main_log_path, error_log_path = setup_logging(verbose=Verbose)
+
+    logger.debug("Main log file: %s", main_log_path)
+    logger.debug("Error log file: %s", error_log_path)
+    logger.info(
+        "Starting run: source=%s destination=%s force_labels=%s verbose=%s",
+        source,
+        Destination,
+        ForceLabels,
+        Verbose,
     )
 
-    if ForceLabels or not labels.is_dir():
-        if model is None:
-            model = YOLO(str(model_path))
-        model.predict(
-            source=resolve_yolo_source_pattern(source),
-            conf=conf,
-            save=False,
-            save_txt=True,
-            save_conf=True,
-            project=str(source),
-            name=".",
-            exist_ok=True,
-            verbose=True,
-            vid_stride=50,
+    try:
+        model_path = resolve_model_path(MODEL_NAME)
+
+        label_names = load_label_names()
+        auto_directory = AutoDirectory
+        group_directory = GroupDirectory
+        group_definitions = load_group_definitions() if group_directory else []
+        (
+            GIRL_OR_WOMAN_CLASSES,
+            HUMAN_FACE_CLASSES,
+            model,
+        ) = resolve_required_class_ids(
+            model_name=str(model_path),
+            label_names=label_names,
+            fallback_girl_or_woman_classes=GIRL_OR_WOMAN_CLASSES,
+            fallback_human_face_class=HUMAN_FACE_CLASS,
         )
 
-    source_files = sorted(file_path for file_path in source.iterdir() if file_path.is_file())
-    legacy_index_label_map = build_legacy_index_label_map(labels=labels, source_files=source_files)
+        if ForceLabels or not labels.is_dir():
+            logger.info("Generating labels in %s", labels)
+            if model is None:
+                model = YOLO(str(model_path))
+            model.predict(
+                source=resolve_yolo_source_pattern(source),
+                conf=conf,
+                project=str(source),
+                name=".",
+                vid_stride=50, # controls frame skip
+                save=False,
+                save_txt=True,
+                save_conf=True, 
+                stream=True,
+                exist_ok=True,
+                verbose=True, # ALWAYS True. Not releated to argparse.
+            )
 
-    for file_path in source_files:
-        label_path: Path = labels / f"{file_path.stem}.txt"
-        if not label_path.is_file():
-            label_path = legacy_index_label_map.get(file_path.stem, label_path)
+        source_files = sorted(file_path for file_path in source.iterdir() if file_path.is_file())
+        logger.info("Discovered %d source file(s).", len(source_files))
+        legacy_index_label_map = build_legacy_index_label_map(labels=labels, source_files=source_files)
 
-        label_counts = parse_label_counts(label_path)
-        has_girl_or_woman = any(class_id in GIRL_OR_WOMAN_CLASSES for class_id in label_counts)
-        has_human_face = any(class_id in HUMAN_FACE_CLASSES for class_id in label_counts)
+        moved_count = 0
+        for file_path in source_files:
+            label_path: Path = labels / f"{file_path.stem}.txt"
+            if not label_path.is_file():
+                label_path = legacy_index_label_map.get(file_path.stem, label_path)
 
-        if has_girl_or_woman and has_human_face:
-            continue
+            label_counts = parse_label_counts(label_path)
+            has_girl_or_woman = any(class_id in GIRL_OR_WOMAN_CLASSES for class_id in label_counts)
+            has_human_face = any(class_id in HUMAN_FACE_CLASSES for class_id in label_counts)
 
-        if auto_directory:
-            if label_counts:
-                primary_class_id = sorted(label_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
-                folder_name = label_names.get(primary_class_id)
-                if folder_name is None:
-                    if model is None:
-                        model = YOLO(str(model_path))
-                    update_label_names_from_model(model, label_names)
-                    folder_name = label_names.get(primary_class_id, f"class_{primary_class_id}")
-                destination_path = Destination / sanitize_folder_name(folder_name)
+            if has_girl_or_woman and has_human_face:
+                continue
+
+            if auto_directory:
+                if label_counts:
+                    primary_class_id = sorted(label_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+                    folder_name = label_names.get(primary_class_id)
+                    if folder_name is None:
+                        if model is None:
+                            model = YOLO(str(model_path))
+                        update_label_names_from_model(model, label_names)
+                        folder_name = label_names.get(primary_class_id, f"class_{primary_class_id}")
+                    destination_path = Destination / sanitize_folder_name(folder_name)
+                else:
+                    destination_path = Destination
+            elif group_directory:
+                group_folder_name = resolve_group_folder_name(label_counts, group_definitions)
+                if group_folder_name is None:
+                    destination_path = Destination
+                else:
+                    destination_path = Destination / sanitize_folder_name(group_folder_name)
             else:
                 destination_path = Destination
-        elif group_directory:
-            group_folder_name = resolve_group_folder_name(label_counts, group_definitions)
-            if group_folder_name is None:
-                destination_path = Destination
-            else:
-                destination_path = Destination / sanitize_folder_name(group_folder_name)
-        else:
-            destination_path = Destination
 
-        destination_path.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(file_path), str(destination_path / file_path.name))
+            destination_path.mkdir(parents=True, exist_ok=True)
+            destination_file = destination_path / file_path.name
+            shutil.move(str(file_path), str(destination_file))
+            moved_count += 1
+            logger.debug("Moved %s -> %s", file_path, destination_file)
 
-    prompt_open_folders(source=source, labels=labels)
+        logger.info("Moved %d non-matching file(s).", moved_count)
+        prompt_open_folders(source=source, labels=labels)
+    except Exception:
+        logger.exception("Unhandled error while running faceless.")
+        raise
 
 if __name__ == "__main__":
     main()

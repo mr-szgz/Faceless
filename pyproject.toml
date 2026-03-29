@@ -15,6 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "build",
+    "pip", # TODO: ensure pip stays upgraded
     "cibuildwheel",
     "pyinstaller>=6",
 ]

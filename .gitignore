@@ -71,3 +71,6 @@ Thumbs.db
 
 *.pt
 .tmp*
+
+*.reg
+!./scripts/ContextMenu.jinja.reg

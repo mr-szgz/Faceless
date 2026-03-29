@@ -10,8 +10,8 @@ run = "pwsh -NoProfile -File scripts/Invoke-Build-Faceless-Wheels.ps1"
 run = "pwsh -NoProfile -File scripts/Invoke-Clean-Faceless-Build.ps1"
 
 [tasks.init]
-run = "uv venv --python 3.12 --seed"
+run = "pwsh -NoProfile -File scripts/Invoke-Initialization.ps1"
 
 [tasks.devel]
-run = "uv sync; uv pip install -e ."
+run = "pwsh -NoProfile -File scripts/Invoke-Devel.ps1"
 # TODO: check if mise supports task dependencies or chains and make init upstream of devel

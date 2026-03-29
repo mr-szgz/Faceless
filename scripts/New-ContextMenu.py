@@ -1,42 +1,75 @@
-"""
-# New-ContextMenu Helper Script
-> Generate a Windows File Explorer Context-Menu Items for Command-Line Tool
+from __future__ import annotations
 
-Usage:
-  python scripts/New-ContextMenu.py -Exe "C:\\Path\\tool.exe"
-  python scripts/New-ContextMenu.py -Exe "C:\\Path\\tool.exe" -TemplatesPath "C:\\Path\\templates"
-  python scripts/New-ContextMenu.py -Exe "C:\\Path\\tool.exe" -Template "C:\\Path\\templates\\Custom.jinja.reg"
-
-Overview:
-  Renders a registry template with named variables and writes the rendered .reg file
-  to the current working directory.
-
-Arguments:
-  -Exe, --exe: Executable path string injected into the template.
-  -TemplatesPath, --templates-path: Directory that contains templates.
-  -Template, --template: Full path to a specific template file; overrides template directory/default name.
-"""
-
-from argparse import ArgumentParser
+import argparse
 from pathlib import Path
+import sys
 
-from jinja2 import Environment, FileSystemLoader
+
+REGFILE_JINJA_TPL = """Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\Faceless]
+@="Run Faceless"
+"Icon"="{{ faceless_exe_path }}"
+
+[HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\Faceless\\command]
+@="\\"{{ faceless_exe_path }}\\" -Auto \\"%1\\""
+
+[HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\FacelessForce]
+@="Run Faceless (Force Labels)"
+"Icon"="{{ faceless_exe_path }}"
+
+[HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\FacelessForce\\command]
+@="\\"{{ faceless_exe_path }}\\" -Auto -Force \\"%1\\""
+"""
+
+# TODO: decompose this function into parse_arguments as its fucking not useful and just noise here as its called once and  FUJCKING MASSIVE VIOLATION WHY THE FUCK ARE YOU STILL DOING THIS SHIT!?
+def add_build_subparser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> argparse.ArgumentParser:
+    build_parser = subparsers.add_parser(
+        "build",
+        help="Build Faceless context-menu .reg file",
+    )
+    build_parser.add_argument(
+        "-Exe",
+        "--exe",
+        required=True,
+        dest="exe",
+        help="Path to Faceless executable",
+    )
+    return build_parser
+
+# TODO: refactor so fucing add_build_subparser and useless fucking bullshit methods are removed and incorporated here
+def parse_arguments() -> Path:
+    """
+    handles all argparser implementation, subparsers, and argument handling - DO NOT ADD HELPERS
+    """
+    
+    parser = argparse.ArgumentParser(prog="New-ContextMenu")
+    subparsers = parser.add_subparsers(dest="command")
+    build_parser = add_build_subparser(subparsers)
+
+    argv = sys.argv[1:]
+    if not argv or argv[0] not in {"build", "-h", "--help"}:
+        argv = ["build", *argv]
+    args = parser.parse_args(argv)
+    print(f"[New-ContextMenu] {args}") # TODO: update so args are printed like "args: $key=$val, $key=$val, $key=$val"
+
+    exe_path = Path(args.exe).expanduser().resolve()
+    print(f"[New-ContextMenu] exe_path: {exe_path}")
+    return exe_path
 
 
-arguments = ArgumentParser()
-arguments.add_argument("-Exe", "--exe", required=True)
-arguments.add_argument("-TemplatesPath", "--templates-path", default=Path(__file__).resolve().parent)
-arguments.add_argument("-Template", "--template")
-parsed_arguments = arguments.parse_args()
+def main() -> None:
+    exe_path = parse_arguments()
 
-default_template_name = "Faceless.jinja.reg"
-template_path = Path(parsed_arguments.template) if parsed_arguments.template else Path(parsed_arguments.templates_path) / default_template_name
-template_directory = template_path.parent
-template_name = template_path.name
-template_environment = Environment(loader=FileSystemLoader(template_directory))
-template_variables = {"faceless_exe_path": parsed_arguments.exe}
-rendered_registry = template_environment.get_template(template_name).render(**template_variables)
+    # prepare 
+    rendered = REGFILE_JINJA_TPL.replace("{{ faceless_exe_path }}", str(exe_path)).replace(
+        "{{faceless_exe_path}}", str(exe_path)
+    )
 
-output_name = "Install-FacelessContextMenu.reg"
-output_path = Path.cwd() / output_name
-output_path.write_text(rendered_registry, encoding="utf-8")
+    output = Path.cwd() / "Install-FacelessContextMenu.reg"
+    output.write_text(rendered, encoding="utf-8")
+    print(f"[New-ContextMenu] wrote: {output}")
+
+
+if __name__ == "__main__":
+    main()
