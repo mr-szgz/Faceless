@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "faceless"
 version = "0.3.1"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.11"
 dependencies = [
     "ultralytics",
     "tqdm",
