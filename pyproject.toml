@@ -1,19 +1,21 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "faceless"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "ultralytics",
     "tqdm",
+    "argparse>=1.4.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "build",
+    "cibuildwheel",
     "pyinstaller>=6",
 ]
 
@@ -22,3 +24,7 @@ faceless = "faceless:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["faceless*"]
+
+[tool.setuptools.package-data]
+faceless = ["labels/*.yaml"]
