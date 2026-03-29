@@ -17,8 +17,8 @@ Download Binary for your system or install .whl from latest Release
 ```
 
 ```bash
-$ faceless --help                                                                                                                                                                                                         
-usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Directory DIRECTORY] [-Auto | -Group] [path]
+$ faceless --help
+usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Directory DIRECTORY] [-Info] [-Version] [-Auto | -Group] [path]
 
 positional arguments:
   path                  Source directory containing images
@@ -33,6 +33,8 @@ options:
                         Model confidence threshold
   -Directory DIRECTORY, --directory DIRECTORY
                         Output directory name for moved files (default: noface)
+  -Info, --info         Show faceless install/runtime paths as JSON
+  -Version, --version   show program's version number and exit
   -Auto, --auto, -a     Move non-matching files into per-label folders under the output directory
   -Group, --group, -g   Move non-matching files into grouped folders under the output directory based on faceless/labels/*.yaml priority
 ```
