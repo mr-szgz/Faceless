@@ -1,9 +1,17 @@
 [tools]
 powershell = "7"
-python = "3.13"
+python = "3.10"
+uv = "latest"
 
 [tasks.build]
 run = "pwsh -NoProfile -File scripts/Invoke-Build-Faceless-Wheels.ps1"
 
 [tasks.clean]
 run = "pwsh -NoProfile -File scripts/Invoke-Clean-Faceless-Build.ps1"
+
+[tasks.init]
+run = "uv venv --python 3.10 --seed"
+
+[tasks.devel]
+run = "uv sync; uv pip install -e ."
+# TODO: check if mise supports task dependencies or chains and make init upstream of devel
