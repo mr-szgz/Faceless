@@ -48,7 +48,47 @@ def sanitize_folder_name(name: str) -> str:
     return sanitized or "unlabeled"
 
 
-def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], Literal[264], bool, float, Path, Path, Path, bool]:
+def parse_group_class_ids(group_file: Path) -> set[int]:
+    class_ids: set[int] = set()
+    for line in group_file.read_text(encoding="utf-8", errors="replace").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key = stripped.split(":", 1)[0].strip().strip("'\"")
+        if key.isdigit():
+            class_ids.add(int(key))
+    return class_ids
+
+
+def load_group_definitions() -> list[tuple[str, set[int]]]:
+    groups_dir = Path(__file__).resolve().parent / "labels"
+    definitions: list[tuple[int, str, set[int]]] = []
+
+    for group_file in groups_dir.glob("*.yaml"):
+        class_ids = parse_group_class_ids(group_file)
+        if not class_ids:
+            continue
+        stem = group_file.stem
+        prefix, _, _ = stem.partition("_")
+        priority = int(prefix) if prefix.isdigit() else 10**9
+        definitions.append((priority, stem, class_ids))
+
+    definitions.sort(key=lambda item: (item[0], item[1].lower()))
+    return [(group_name, class_ids) for _, group_name, class_ids in definitions]
+
+
+def resolve_group_folder_name(label_counts: dict[int, int], group_definitions: list[tuple[str, set[int]]]) -> str | None:
+    if not label_counts:
+        return None
+
+    class_ids = set(label_counts)
+    for group_name, group_class_ids in group_definitions:
+        if class_ids & group_class_ids:
+            return group_name
+    return None
+
+
+def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], Literal[264], bool, float, Path, Path, Path, bool, bool]:
     MODEL_NAME = "yolov8n-oiv7.pt"
     GIRL_OR_WOMAN_CLASSES: set[int] = {216, 594}
     HUMAN_FACE_CLASS = 264
@@ -63,7 +103,9 @@ def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], Literal[264
     parser.add_argument("-Label", "--label", action="store_true", dest="force_labels", help="Force regeneration of labels")
     parser.add_argument("-Conf", "--conf", type=float, default=Conf, help="Model confidence threshold")
     parser.add_argument("-Directory", "--directory", help=f"Output directory name for moved files (default: {Directory})")
-    parser.add_argument("-Auto", "--auto", "-a", action="store_true", dest="auto_directory", help="Move non-matching files into per-label folders under the output directory")
+    move_augment_group = parser.add_mutually_exclusive_group()
+    move_augment_group.add_argument("-Auto", "--auto", "-a", action="store_true", dest="auto_directory", help="Move non-matching files into per-label folders under the output directory")
+    move_augment_group.add_argument("-Group", "--group", "-g", action="store_true", dest="group_directory", help="Move non-matching files into grouped folders under the output directory based on faceless/labels/*.yaml priority")
 
     args = parser.parse_args()
 
@@ -76,12 +118,13 @@ def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], Literal[264
     if args.directory is not None:
         Directory = args.directory
     AutoDirectory = args.auto_directory
+    GroupDirectory = args.group_directory
 
     source: Path = Path(path).expanduser().resolve()
     labels: Path = source / "labels"
     Destination: Path = source / Directory
 
-    return MODEL_NAME, GIRL_OR_WOMAN_CLASSES, HUMAN_FACE_CLASS, ForceLabels, Conf, source, labels, Destination, AutoDirectory
+    return MODEL_NAME, GIRL_OR_WOMAN_CLASSES, HUMAN_FACE_CLASS, ForceLabels, Conf, source, labels, Destination, AutoDirectory, GroupDirectory
 
 def main() -> None:
     (
@@ -94,10 +137,13 @@ def main() -> None:
         labels,
         Destination,
         AutoDirectory,
+        GroupDirectory,
     ) = parse_arguments()
 
     label_names = load_label_names()
     auto_directory = AutoDirectory
+    group_directory = GroupDirectory
+    group_definitions = load_group_definitions() if group_directory else []
     if ForceLabels or not labels.is_dir():
         YOLO(MODEL_NAME).predict(
             source=str(source),
@@ -132,6 +178,12 @@ def main() -> None:
                 destination_path = Destination / sanitize_folder_name(folder_name)
             else:
                 destination_path = Destination
+        elif group_directory:
+            group_folder_name = resolve_group_folder_name(label_counts, group_definitions)
+            if group_folder_name is None:
+                destination_path = Destination
+            else:
+                destination_path = Destination / sanitize_folder_name(group_folder_name)
         else:
             destination_path = Destination
 
