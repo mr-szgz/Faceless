@@ -42,6 +42,42 @@ def normalize_label_name(name: str) -> str:
     return "".join(char for char in name.lower() if char.isalnum())
 
 
+def resolve_user_cache_dir(app_name: str = "faceless") -> Path:
+    home = Path.home()
+    if os.name == "nt":
+        cache_root = os.getenv("LOCALAPPDATA") or os.getenv("APPDATA")
+        if cache_root:
+            return Path(cache_root) / app_name
+        return home / f".{app_name}"
+    if os.sys.platform == "darwin":
+        return home / "Library" / "Caches" / app_name
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME")
+    if xdg_cache_home:
+        return Path(xdg_cache_home) / app_name
+    return home / ".cache" / app_name
+
+
+def resolve_model_path(model_name: str) -> Path:
+    cache_dir = resolve_user_cache_dir() / "models"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    model_path = cache_dir / model_name
+
+    if model_path.is_file():
+        return model_path
+
+    # Reuse an existing local model file before falling back to a fresh download.
+    candidate_paths = (
+        Path.cwd() / model_name,
+        Path(__file__).resolve().parent.parent / model_name,
+    )
+    for candidate in candidate_paths:
+        if candidate.is_file():
+            shutil.copy2(candidate, model_path)
+            return model_path
+
+    return model_path
+
+
 def update_label_names_from_model(model: YOLO, label_names: dict[int, str]) -> None:
     model_names = model.names
     if isinstance(model_names, dict):
@@ -223,7 +259,7 @@ def parse_arguments() -> tuple[Literal['yolov8n-oiv7.pt'], set[int], int, bool, 
     parser = argparse.ArgumentParser(prog="faceless")
     parser.add_argument("path", nargs="?", help="Source directory containing images")
     parser.add_argument("-Path", "--path", dest="path_option", help="Source directory containing images")
-    parser.add_argument("-Label", "--label", action="store_true", dest="force_labels", help="Force regeneration of labels")
+    parser.add_argument("-Label", "--label", "-Force", "--force", action="store_true", dest="force_labels", help="Force regeneration of labels")
     parser.add_argument("-Conf", "--conf", type=float, default=Conf, help="Model confidence threshold")
     parser.add_argument("-Directory", "--directory", help=f"Output directory name for moved files (default: {Directory})")
     move_augment_group = parser.add_mutually_exclusive_group()
@@ -262,6 +298,7 @@ def main() -> None:
         AutoDirectory,
         GroupDirectory,
     ) = parse_arguments()
+    model_path = resolve_model_path(MODEL_NAME)
 
     label_names = load_label_names()
     auto_directory = AutoDirectory
@@ -272,7 +309,7 @@ def main() -> None:
         HUMAN_FACE_CLASSES,
         model,
     ) = resolve_required_class_ids(
-        model_name=MODEL_NAME,
+        model_name=str(model_path),
         label_names=label_names,
         fallback_girl_or_woman_classes=GIRL_OR_WOMAN_CLASSES,
         fallback_human_face_class=HUMAN_FACE_CLASS,
@@ -280,7 +317,7 @@ def main() -> None:
 
     if ForceLabels or not labels.is_dir():
         if model is None:
-            model = YOLO(MODEL_NAME)
+            model = YOLO(str(model_path))
         model.predict(
             source=str(source),
             conf=conf,
@@ -313,7 +350,7 @@ def main() -> None:
                 folder_name = label_names.get(primary_class_id)
                 if folder_name is None:
                     if model is None:
-                        model = YOLO(MODEL_NAME)
+                        model = YOLO(str(model_path))
                     update_label_names_from_model(model, label_names)
                     folder_name = label_names.get(primary_class_id, f"class_{primary_class_id}")
                 destination_path = Destination / sanitize_folder_name(folder_name)

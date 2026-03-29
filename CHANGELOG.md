@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-29
+### Added
+- Added `-Force`/`--force` as aliases for `-Label`/`--label` to force YOLO label regeneration.
+- Added Windows Explorer context menu entries for `Run Faceless (Force Labels)` and `Run Faceless Here (Force Labels)` using the full `faceless.exe` path with `-Auto -Force`.
+
 ## [0.2.2] - 2026-03-29
 ### Added
 - Added an interactive post-run prompt flow to optionally open the source input directory in File Explorer, and when declined, optionally open the `labels` folder (`[Y/n]` then `[y/N]`).
