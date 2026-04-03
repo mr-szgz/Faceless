@@ -33,3 +33,52 @@ jobs:
 
       - name: Validate built artifacts
         run: python -m twine check dist/${{ matrix.python-version }}/*
+
+  mise-build:
+    name: Mise Build Task
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          cache: true
+
+      - name: Install tools
+        run: mise install
+
+      - name: Build via mise
+        run: mise run build -- -Clean
+
+      - name: Validate built artifacts
+        run: |
+          mise exec -- python -m pip install --upgrade pip twine
+          mise exec -- python -m twine check dist/*
+
+  exe-build:
+    name: Build Windows Launcher Exe
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          cache: true
+
+      - name: Install tools
+        run: mise install
+
+      - name: Build run-faceless launcher
+        run: mise run build-exe -- -Clean
+
+      - name: Upload exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-faceless-exe
+          path: dist/*.exe

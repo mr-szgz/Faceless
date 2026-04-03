@@ -9,7 +9,7 @@ from faceless.users import ask_user_yn, open_user_folder
 
 DEFAULT_MODEL_NAME = "yolov8n-oiv7.pt"
 REQUIRED_FACE_SELECTORS = "264"
-VERSION = "0.5.1"
+VERSION = "0.6.0"
 COPYRIGHT_YEAR = "2026"
 IDENTITY_TEXT = f"faceless {VERSION}\nCopyright (c) {COPYRIGHT_YEAR}"
 VIDEO_EXTENSIONS = {

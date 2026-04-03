@@ -9,8 +9,8 @@ Faceless is a CLI tool. Replace this description with a short project summary.
 ## Install
 
 1. pip install {{ github_whl_release_url }}
-2. download [faceless.exe]({{ github_exe_release_url }}) from release
-3. faceless.exe --install
+2. download [run-faceless.exe]({{ github_exe_release_url }}) from release
+3. run-faceless.exe --install
 
 ## Usage
 

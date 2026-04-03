@@ -5,8 +5,8 @@ Faceless is a CLI tool. Replace this description with a short project summary.
 ## Install
 
 1. pip install <!-- .whl not found -->
-2. download [faceless.exe](<!-- run_arcfaces.exe not found -->) from release
-3. faceless.exe --install
+2. download [run-faceless.exe](<!-- run-faceless.exe not found -->) from release
+3. run-faceless.exe --install
 
 ## Usage
 
@@ -58,6 +58,14 @@ All notable changes to this project will be documented in this file.
 > - Keep versioning aligned with [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.0] - 2026-04-03
+### Changed
+- BREAKING: use `run-faceless.exe` as the dedicated Windows entrypoint instead of `faceless.exe`.
+
+### Added
+- Add the `run-faceless` launcher module and PyInstaller spec.
+- Add a dedicated build helper script for the launcher executable.
 
 ## [0.5.1] - 2026-04-03
 ### Added

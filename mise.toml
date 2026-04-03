@@ -10,6 +10,9 @@ _.path = [".venv",".venv/Scripts"]
 [tasks.build]
 run = "pwsh -NoProfile -File scripts/Invoke-Build.ps1"
 
+[tasks.build-exe]
+run = "pwsh -NoProfile -File scripts/Invoke-Build-Exe.ps1"
+
 [tasks.clean]
 run = "pwsh -NoProfile -File scripts/Invoke-Clean.ps1"
 

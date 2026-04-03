@@ -11,6 +11,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-03
+### Changed
+- BREAKING: use `run-faceless.exe` as the dedicated Windows entrypoint instead of `faceless.exe`.
+
+### Added
+- Add the `run-faceless` launcher module and PyInstaller spec.
+- Add a dedicated build helper script for the launcher executable.
+
 ## [0.5.1] - 2026-04-03
 ### Added
 - Generate README.md from the release template.
