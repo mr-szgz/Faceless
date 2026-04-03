@@ -74,3 +74,4 @@ Thumbs.db
 
 *.reg
 !./scripts/ContextMenu.jinja.reg
+Faceless.code-workspace
