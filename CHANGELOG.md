@@ -11,6 +11,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-05
+### Added
+- Add the `run-faceless` Windows launcher with `--install`/`--uninstall` helpers for the Explorer context menu.
+
+### Changed
+- Group non-matching files into label-named subfolders by default; remove the `-Auto` flag.
+- Refresh example assets and move archived reference material under `references/`.
+
+### Removed
+- Retire legacy installer and regression helper scripts.
+
 ## [0.4.2] - 2026-03-29
 ### Fixed
 - Use a single user-home cache location (`~/.faceless/models`) for YOLO model downloads to prevent cwd-based re-downloads.

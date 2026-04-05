@@ -232,7 +232,7 @@ wheels = [
 
 [[package]]
 name = "faceless"
-version = "0.4.2"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "argparse" },
