@@ -10,10 +10,10 @@ Visit release and find latest <https://github.com/mr-szgz/faceless/releases>
 Install the whl directly like 
 
 ```sh
-pip install https://github.com/mr-szgz/faceless/releases/download/v0.3.1/faceless-0.3.1-py3-none-any.whl --force
+pip install ./faceless-0.4.2-py3-none-any.whl --force
 ```
 
-or clone the repo and you can `pip install -e .` (`mise run devel` reccomended)
+or clone the repo and you can `pip install -e .` (`mise run dev` reccomended)
 
 
 ## Usage
@@ -21,12 +21,12 @@ or clone the repo and you can `pip install -e .` (`mise run devel` reccomended)
 **Automatically Move Faceless Media and Group by Label**
 
 ```sh
-faceless "p:/path/to/media"
+$ faceless "p:/path/to/media"
 ```
 
 ```sh
-$ faceless --help
-usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Directory DIRECTORY] [-Version] [path]                                    
+$ uv run python -m faceless --help                                                                                                                                
+usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Match MATCH] [-Directory DIRECTORY] [--install] [--uninstall] [--install-info] [path]            
 
 positional arguments:
   path                  Source directory containing images
@@ -39,10 +39,13 @@ options:
                         Force regeneration of labels
   -Conf CONF, --conf CONF
                         Model confidence threshold
+  -Match MATCH, --match MATCH
+                        Required match class IDs, comma-separated (example: "1,43,51"). Default: "216,594".
   -Directory DIRECTORY, --directory DIRECTORY
                         Output directory name for moved files (default: faceless)
-  -Version, --version, -v
-                        show program's version number and exit
+  --install             Install the File Explorer context-menu entry (Windows only).
+  --uninstall           Remove the File Explorer context-menu entry (Windows only).
+  --install-info        Show resolved paths and registry command.
 ```
 
 ## Changes
