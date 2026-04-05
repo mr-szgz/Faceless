@@ -8,7 +8,6 @@ from pathlib import Path
 
 from ultralytics import YOLO
 from faceless.models import download_models
-from  faceless.installer import _add_installer_argparser, installer_info, installer_install, installer_uninstall
 DEFAULT_MODEL_NAME = "yolov8n-oiv7.pt"
 DEFAULT_MATCH_SELECTORS = "216,594"
 REQUIRED_FACE_SELECTORS = "264"
@@ -40,15 +39,8 @@ def main() -> None:
         default="faceless",
         help="Output directory name for moved files (default: faceless)",
     )
-    parser = _add_installer_argparser(parser)
+
     args = parser.parse_args(sys.argv[1:])
-    
-    if args.install_info:
-        return installer_info()
-    if args.install:
-        return installer_install()
-    if args.uninstall:
-        return installer_uninstall()
     
     source_text = args.path_option or args.path
     source = Path(source_text).expanduser().resolve()
