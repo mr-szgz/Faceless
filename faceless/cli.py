@@ -8,7 +8,7 @@ from pathlib import Path
 
 from ultralytics import YOLO
 from faceless.models import download_models
-
+from  faceless.installer import _add_installer_argparser, installer_info, installer_install, installer_uninstall
 DEFAULT_MODEL_NAME = "yolov8n-oiv7.pt"
 DEFAULT_MATCH_SELECTORS = "216,594"
 REQUIRED_FACE_SELECTORS = "264"
@@ -40,7 +40,16 @@ def main() -> None:
         default="faceless",
         help="Output directory name for moved files (default: faceless)",
     )
+    parser = _add_installer_argparser(parser)
     args = parser.parse_args(sys.argv[1:])
+    
+    if args.install_info:
+        return installer_info()
+    if args.install:
+        return installer_install()
+    if args.uninstall:
+        return installer_uninstall()
+    
     source_text = args.path_option or args.path
     source = Path(source_text).expanduser().resolve()
 
@@ -58,7 +67,8 @@ def main() -> None:
     if generate_labels and source_files:
         labels.mkdir(parents=True, exist_ok=True)
         escaped_source = glob.escape(str(source))
-        source_pattern = f"{escaped_source}{'' if escaped_source.endswith(('/', '\\')) else os.sep}*.*"
+        ends_with_sep = escaped_source.endswith(("/", os.sep))
+        source_pattern = f"{escaped_source}{'' if ends_with_sep else os.sep}*.*"
         print(f"Generating labels in {labels}")
         for _ in model.predict( # pyright: ignore[reportOptionalMemberAccess]
             source=source_pattern,

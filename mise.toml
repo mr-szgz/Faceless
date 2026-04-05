@@ -1,6 +1,6 @@
 [tools]
 powershell = "7"
-python = "3.12"
+python = "3.10"
 uv = "latest"
 
 [env]
@@ -8,17 +8,21 @@ UV_LINK_MODE="copy"
 _.path = [".venv",".venv/Scripts"]
 
 [tasks.build]
-run = "pwsh -NoProfile -File scripts/Invoke-Build-Faceless-Wheels.ps1"
+run = "pwsh -NoProfile -File scripts/Invoke-Build.ps1"
+[tasks.wheel]
+run = "pwsh -NoProfile -File scripts/Invoke-Wheel.ps1"
 
 [tasks.clean]
-run = "pwsh -NoProfile -File scripts/Invoke-Clean-Faceless-Build.ps1"
+run = "pwsh -NoProfile -File scripts/Invoke-Clean.ps1"
 
 [tasks.init]
-run = "pwsh -NoProfile -File scripts/Invoke-Initialization.ps1"
+run = "pwsh -NoProfile -Command uv venv --python 3.10 --seed"
 
-[tasks.devel]
-run = "pwsh -NoProfile -File scripts/Invoke-Devel.ps1"
-# TODO: check if mise supports task dependencies or chains and make init upstream of devel
+[tasks.new-menu]
+run = "pwsh -NoProfile -Command uv run python scripts/New-ContextMenu.py -Exe ((Get-Command faceless).Source)"
 
-[tasks.test]
-run = ".venv\\Scripts\\python.exe -m pytest -q"
+[tasks.new-install]
+run = "pwsh -NoProfile -File scripts/New-Install.ps1"
+
+[tasks.dev]
+run = "pwsh -NoProfile -File scripts/Invoke-Dev.ps1"

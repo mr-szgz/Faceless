@@ -6,4 +6,5 @@ uv pip install -e .
 
 # get the powershell discovered path (probably .venv path)
 (Get-Command faceless).Source
-# TODO: if Where-Is cmdlet is avaialble also call-it with `faceless`
+
+mise run new-menu
