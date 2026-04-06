@@ -14,39 +14,40 @@ REQUIRED_FACE_SELECTORS = "264"
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="faceless")
-    parser.add_argument("path", nargs="?", help="Source directory containing images")
-    parser.add_argument("-Path", "--path", dest="path_option", help="Source directory containing images")
     parser.add_argument(
-        "-Label",
-        "--label",
+        "path", nargs="?", help="Source directory containing videos/images"
+    )
+    parser.add_argument(
         "-Force",
         "--force",
         action="store_true",
         dest="force_labels",
         help="Force regeneration of labels",
     )
-    parser.add_argument("-Conf", "--conf", type=float, default=0.2, help="Model confidence threshold")
     parser.add_argument(
-        "-Match",
-        "--match",
+        "-Confidence", "--confidence", dest="conf_float", type=float, default=0.2, help="Model confidence threshold"
+    )
+    parser.add_argument(
+        "-RequireIds",
+        "--require-ids",
         default=DEFAULT_MATCH_SELECTORS,
-        dest="match",
-        help='Required match class IDs, comma-separated (example: "1,43,51"). Default: "216,594".',
+        dest="yolo_class_ints",
+        help='YOLO class IDs to keep comma-separated. All classes available in faceless/datasets/OpenImagesV7.yaml. Default: "216,594"',
     )
     parser.add_argument(
         "-Directory",
         "--directory",
         default="faceless",
-        help="Output directory name for moved files (default: faceless)",
+        dest="dir",
+        help="Override output directory. Default: ./faceless",
     )
 
     args = parser.parse_args(sys.argv[1:])
     
-    source_text = args.path_option or args.path
-    source = Path(source_text).expanduser().resolve()
+    source = Path(args.path).expanduser().resolve()
 
     labels = source / "labels"
-    destination_root = source / args.directory
+    destination_root = source / args.dir
     source_files = sorted(path for path in source.iterdir() if path.is_file())
 
     generate_labels = args.force_labels or not labels.is_dir() or any(
@@ -64,7 +65,7 @@ def main() -> None:
         print(f"Generating labels in {labels}")
         for _ in model.predict( # pyright: ignore[reportOptionalMemberAccess]
             source=source_pattern,
-            conf=args.conf,
+            conf=args.conf_float,
             project=str(source),
             name=".",
             save=False,
@@ -80,7 +81,7 @@ def main() -> None:
     def parse_class_ids(selector_text: str) -> set[int]:
         return {int(token.strip()) for token in selector_text.split(",") if token.strip()}
 
-    required_match_classes = parse_class_ids(args.match)
+    classes_to_keep = parse_class_ids(args.yolo_class_ints)
     required_face_classes = parse_class_ids(REQUIRED_FACE_SELECTORS)
 
     label_names: dict[int, str] = {}
@@ -101,7 +102,7 @@ def main() -> None:
                 label_counts[class_id] = label_counts.get(class_id, 0) + 1
 
         detected_classes = set(label_counts)
-        has_required_match = bool(detected_classes & required_match_classes)
+        has_required_match = bool(detected_classes & classes_to_keep)
         has_required_face = bool(detected_classes & required_face_classes)
 
         if has_required_match and has_required_face:
