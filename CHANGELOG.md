@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-04-06
+### Changed
+- Bump release metadata to `0.7.1` and refresh README install snippets.
+
 ## [0.7.0] - 2026-04-05
 ### Added
 - Add the `run-faceless` Windows launcher with `--install`/`--uninstall` helpers for the Explorer context menu.

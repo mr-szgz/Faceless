@@ -9,7 +9,7 @@ Download the Windows exe or wheel from the GitHub releases page: [https://github
 Install a wheel directly:
 
 ```sh
-pip install ./faceless-0.7.0-py3-none-any.whl --force
+pip install ./faceless-0.7.1-py3-none-any.whl --force
 ```
 
 Or clone the repo and install in editable mode:
