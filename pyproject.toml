@@ -10,6 +10,7 @@ dependencies = [
     "ultralytics",
     "tqdm",
     "argparse",
+    "opencv-python>=4.13.0.92",
 ]
 
 [project.optional-dependencies]

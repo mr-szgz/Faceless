@@ -1,11 +1,10 @@
 import json
 from pathlib import Path
-from urllib.request import urlretrieve
+
 
 USER_HOME = Path("~").expanduser().resolve()
 USER_DATA = USER_HOME / ".faceless"
 FACELESS_CONFIG = USER_DATA / "faceless.json"
-
 
 def ensure_user_data_layout() -> dict[str, Path]:
     models_dir = USER_DATA / "models"
@@ -31,10 +30,3 @@ def ensure_user_data_layout() -> dict[str, Path]:
     }
 
 
-def download_configs():
-    paths = ensure_user_data_layout()
-    destination = paths["configs"] / "OpenImagesV7.yaml"
-    if destination.is_file() and destination.stat().st_size > 0:
-        return destination
-    urlretrieve("https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/cfg/datasets/OpenImagesV7.yaml", destination)
-    return destination

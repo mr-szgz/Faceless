@@ -8,6 +8,8 @@ from pathlib import Path
 
 from ultralytics import YOLO
 from faceless.models import download_models
+from faceless.configs import ensure_user_data_layout
+
 DEFAULT_MODEL_NAME = "yolov8n-oiv7.pt"
 DEFAULT_MATCH_SELECTORS = "216,594"
 REQUIRED_FACE_SELECTORS = "264"
@@ -38,35 +40,35 @@ def main() -> None:
         "-Directory",
         "--directory",
         default="faceless",
-        dest="dir",
+        dest="output_dir",
         help="Override output directory. Default: ./faceless",
     )
 
     args = parser.parse_args(sys.argv[1:])
     
-    source = Path(args.path).expanduser().resolve()
+    sources_path = Path(args.path).expanduser().resolve()
 
-    labels = source / "labels"
-    destination_root = source / args.dir
-    source_files = sorted(path for path in source.iterdir() if path.is_file())
+    labels = sources_path / "labels"
+    source_files = sorted(path for path in sources_path.iterdir() if path.is_file())
 
     generate_labels = args.force_labels or not labels.is_dir() or any(
         not (labels / f"{path.stem}.txt").is_file() for path in source_files
     )
+    
+    ensure_user_data_layout()
 
-    # SOMEDAY: be less niave about whether labels exist or not to allow resume
     model = YOLO(str(download_models(DEFAULT_MODEL_NAME)))
 
     if generate_labels and source_files:
         labels.mkdir(parents=True, exist_ok=True)
-        escaped_source = glob.escape(str(source))
+        escaped_source = glob.escape(str(sources_path))
         ends_with_sep = escaped_source.endswith(("/", os.sep))
         source_pattern = f"{escaped_source}{'' if ends_with_sep else os.sep}*.*"
         print(f"Generating labels in {labels}")
         for _ in model.predict( # pyright: ignore[reportOptionalMemberAccess]
             source=source_pattern,
             conf=args.conf_float,
-            project=str(source),
+            project=str(sources_path),
             name=".",
             save=False,
             save_txt=True,
@@ -102,24 +104,23 @@ def main() -> None:
                 label_counts[class_id] = label_counts.get(class_id, 0) + 1
 
         detected_classes = set(label_counts)
-        has_required_match = bool(detected_classes & classes_to_keep)
-        has_required_face = bool(detected_classes & required_face_classes)
+        has_required_id = bool(detected_classes & classes_to_keep)
+        has_face_present = bool(detected_classes & required_face_classes)
 
-        if has_required_match and has_required_face:
+        if has_required_id and has_face_present:
             continue
 
-        destination_path = destination_root
+        final_destination = sources_path / args.output_dir
         if label_counts:
-            primary_class_id = sorted(label_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
-            folder_name = label_names.get(primary_class_id, f"class_{primary_class_id}")
-            folder_name = "".join("_" if char in '<>:"/\\|?*' else char for char in folder_name).strip(" .")
-            destination_path = destination_root / (folder_name or "unlabeled")
+            top_class_id = sorted(label_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+            save_class_name = label_names.get(top_class_id, str(top_class_id))
+            final_destination = sources_path / args.output_dir / save_class_name
 
-        destination_path.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(source_file), str(destination_path / source_file.name))
+        final_destination.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(source_file), str(final_destination / source_file.name))
         moved_count += 1
 
-    print(f"Moved {moved_count} non-matching file(s).")
+    print(f"Moved {moved_count} file(s).")
 
 
 if __name__ == "__main__":

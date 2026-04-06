@@ -26,3 +26,6 @@ run = "pwsh -NoProfile -File scripts/New-Install.ps1"
 
 [tasks.dev]
 run = "pwsh -NoProfile -File scripts/Invoke-Dev.ps1"
+
+[tasks.reset]
+run = "pwsh -NoProfile -File scripts/Reset-Examples.ps1"
