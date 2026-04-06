@@ -30,7 +30,9 @@ Show help:
 
 ```sh
 python -m faceless --help
-usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Match MATCH] [-Directory DIRECTORY] [path]
+usage: faceless [-h] [-Path PATH_OPTION] [-Label] [-Conf CONF] [-Match MATCH]
+                [-Directory DIRECTORY]
+                [path]
 
 positional arguments:
   path                  Source directory containing images
@@ -44,9 +46,11 @@ options:
   -Conf CONF, --conf CONF
                         Model confidence threshold
   -Match MATCH, --match MATCH
-                        Required match class IDs, comma-separated (example: "1,43,51"). Default: "216,594".
+                        Required match class IDs, comma-separated (example:
+                        "1,43,51"). Default: "216,594".
   -Directory DIRECTORY, --directory DIRECTORY
-                        Output directory name for moved files (default: faceless)
+                        Output directory name for moved files (default:
+                        faceless)
 ```
 
 ## Windows Context Menu
