@@ -15,7 +15,6 @@ REGFILE_JINJA_TPL = """Windows Registry Editor Version 5.00
 @="\\"{{ faceless_exe_path }}\\" \\"%1\\""
 """
 
-# TODO: decompose this function into parse_arguments as its fucking not useful and just noise here as its called once and  FUJCKING MASSIVE VIOLATION WHY THE FUCK ARE YOU STILL DOING THIS SHIT!?
 def add_build_subparser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> argparse.ArgumentParser:
     build_parser = subparsers.add_parser(
         "build",
@@ -30,7 +29,6 @@ def add_build_subparser(subparsers: argparse._SubParsersAction[argparse.Argument
     )
     return build_parser
 
-# TODO: refactor so fucing add_build_subparser and useless fucking bullshit methods are removed and incorporated here
 def parse_arguments() -> Path:
     """
     handles all argparser implementation, subparsers, and argument handling - DO NOT ADD HELPERS
@@ -44,7 +42,7 @@ def parse_arguments() -> Path:
     if not argv or argv[0] not in {"build", "-h", "--help"}:
         argv = ["build", *argv]
     args = parser.parse_args(argv)
-    print(f"[New-ContextMenu] {args}") # TODO: update so args are printed like "args: $key=$val, $key=$val, $key=$val"
+    print(f"[New-ContextMenu] {args}")
 
     exe_path = Path(args.exe).expanduser().resolve()
     print(f"[New-ContextMenu] exe_path: {exe_path}")

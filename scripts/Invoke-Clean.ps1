@@ -1,4 +1,12 @@
-$root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+[CmdletBinding()]
+param(
+    [string]$Python,
+    [string]$ProjectRoot = (Join-Path $PSScriptRoot ".."),
+    [string]$OutputDir = "dist",
+    [switch]$Clean,
+    [string]$Prefix = (Split-Path -Parent $PSScriptRoot)
+)
+. "$Prefix\scripts\Set-Environment.ps1" -Prefix $Prefix
 
 $fixedTargets = @(
     "build",
@@ -8,18 +16,19 @@ $fixedTargets = @(
     ".ruff_cache",
     ".tox",
     ".nox",
-    ".coverage"
+    ".coverage",
+    "dependencies/venv"
 )
 
 foreach ($target in $fixedTargets) {
-    $fullPath = Join-Path $root $target
+    $fullPath = Join-Path $Prefix $target
     if (Test-Path -LiteralPath $fullPath) {
         Remove-Item -LiteralPath $fullPath -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
-Get-ChildItem -Path $root -Directory -Filter "*.egg-info" -Force -ErrorAction SilentlyContinue |
+Get-ChildItem -Path $Prefix -Directory -Filter "*.egg-info" -Force -ErrorAction SilentlyContinue |
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-Get-ChildItem -Path $root -Directory -Filter "__pycache__" -Force -Recurse -ErrorAction SilentlyContinue |
+Get-ChildItem -Path $Prefix -Directory -Filter "__pycache__" -Force -Recurse -ErrorAction SilentlyContinue |
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue

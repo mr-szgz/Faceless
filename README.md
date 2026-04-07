@@ -18,6 +18,14 @@ Or clone the repo and install in editable mode:
 pip install -e .
 ```
 
+Or uv
+
+```sh
+
+$ uv sync
+$ uv run python -m faceless --help
+```
+
 ## Usage
 
 Move non-matching media (grouped by label when available):

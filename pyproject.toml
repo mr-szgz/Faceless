@@ -23,6 +23,7 @@ dev = [
 
 [project.scripts]
 faceless = "faceless:main"
+run_faceless = "faceless:run_faceless"
 
 [tool.setuptools.packages.find]
 where = ["."]

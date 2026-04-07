@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from faceless.configs import USER_DATA
+from faceless.config import FACELESS_CONFIG_DIR
 
-_OPENIMAGES_CONFIG = USER_DATA / "configs" / "OpenImagesV7.yaml"
+_OPENIMAGES_CONFIG = Path(FACELESS_CONFIG_DIR) / "configs" / "OpenImagesV7.yaml"
 
 def _class_id_to_class_name(class_id: int, class_names: dict[int, str]):
     class_name = class_names.get(class_id)

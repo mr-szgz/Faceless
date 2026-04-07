@@ -6,11 +6,10 @@ uv = "latest"
 [env]
 UV_LINK_MODE="copy"
 _.path = [".venv",".venv/Scripts"]
+UV_PROJECT_ENVIRONMENT="./dependencies/venv"
 
 [tasks.build]
 run = "pwsh -NoProfile -File scripts/Invoke-Build.ps1"
-[tasks.wheel]
-run = "pwsh -NoProfile -File scripts/Invoke-Wheel.ps1"
 
 [tasks.clean]
 run = "pwsh -NoProfile -File scripts/Invoke-Clean.ps1"
@@ -19,7 +18,7 @@ run = "pwsh -NoProfile -File scripts/Invoke-Clean.ps1"
 run = "pwsh -NoProfile -Command uv venv --python 3.10 --seed"
 
 [tasks.new-menu]
-run = "pwsh -NoProfile -Command uv run python scripts/New-ContextMenu.py -Exe ((Get-Command faceless).Source)"
+run = "pwsh -NoProfile -Command uv run python scripts/New-ContextMenu.py -Exe ((Get-Command run-faceless).Source)"
 
 [tasks.new-install]
 run = "pwsh -NoProfile -File scripts/New-Install.ps1"
