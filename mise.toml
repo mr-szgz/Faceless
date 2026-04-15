@@ -7,7 +7,7 @@ uv = "latest"
 UV_LINK_MODE="copy"
 _.path = [".venv",".venv/Scripts"]
 UV_PROJECT_ENVIRONMENT="./dependencies/venv"
-
+FACELESS_CONFIG_DIR="C:\\Users\\shoji\\.faceless"
 [tasks.build]
 run = "pwsh -NoProfile -File scripts/Invoke-Build.ps1"
 

@@ -6,42 +6,42 @@ from faceless.config import DEPENDENCIES_DIR
 import os
 env = {**os.environ, "PYTHONNOUSERSITE": "1", "PYTHONPATH": ""}
 
-def run_ffprobe_dump(path: str | Path):
+def run_ffprobe_dump(source_files: list[Path]):
     from tqdm import tqdm
     dependencies = Path(DEPENDENCIES_DIR).expanduser().resolve()
-    source_path = Path(path).expanduser().resolve()
+    source_path = source_files[0].parent if source_files else Path.cwd()
     output_dir = source_path / "ffprobes"
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    source_files = sorted(path for path in source_path.iterdir() if path.is_file())
-    progress = tqdm(source_files, desc="Probing media files")
+    progress = tqdm(total=len(source_files), desc="Probing media files", unit="file", mininterval=0.5, miniters=32)
 
-    for item in progress:
-        if not item.is_file():
-            continue
-
-        output_path = output_dir / f"{item.stem}.txt"
-        with output_path.open("wb") as handle:
-            subprocess.check_call(
-                [
-                    str(dependencies / "ffprobe.exe"),
-                    "-v",
-                    "error",
-                    "-select_streams",
-                    "v:0",
-                    "-count_frames",
-                    "-show_entries",
-                    "stream=avg_frame_rate,r_frame_rate,nb_read_frames",
-                    "-of",
-                    "default=noprint_wrappers=1:nokey=0",
-                    str(item),
-                ],
-                env=env,
-                stdout=handle,
-            )
-    
-    calc_median_fps(path)
-    calc_median_frames(path)
+    try:
+        for item in source_files:
+            output_path = output_dir / f"{item.stem}.txt"
+            with output_path.open("wb") as handle:
+                subprocess.check_call(
+                    [
+                        str(dependencies / "ffprobe.exe"),
+                        "-v",
+                        "error",
+                        "-probesize",
+                        "32k",
+                        "-analyzeduration",
+                        "0",
+                        "-select_streams",
+                        "v:0",
+                        "-show_entries",
+                        "stream=avg_frame_rate,r_frame_rate,nb_frames:format=duration",
+                        "-of",
+                        "default=noprint_wrappers=1:nokey=0",
+                        str(item),
+                    ],
+                    env=env,
+                    stdout=handle,
+                )
+            progress.update(1)
+    finally:
+        progress.close()
             
     return output_dir
 
@@ -62,6 +62,26 @@ def parse_probe_file(probe_file: Path) -> dict[str, str]:
 
     return properties
 
+# MATHS
+
+def get_first_valid_fraction(properties: dict[str, str], *keys: str) -> Fraction | None:
+    for key in keys:
+        value = properties.get(key)
+        if value in (None, "", "N/A"):
+            continue
+
+        try:
+            fraction = Fraction(value)
+        except (ValueError, ZeroDivisionError):
+            continue
+
+        if fraction > 0:
+            return fraction
+
+    return None
+
+# CALCULATIONS
+
 def calc_median_fps(source: Path):
     source = source.expanduser().resolve()
     probes_dir = source / "ffprobes"
@@ -74,14 +94,11 @@ def calc_median_fps(source: Path):
                 continue
 
             properties = parse_probe_file(Path(entry.path))
-            frame_rate = properties.get("r_frame_rate")
+            frame_rate = get_first_valid_fraction(properties, "r_frame_rate", "avg_frame_rate")
             if frame_rate is None:
                 continue
 
-            try:
-                frame_rates.append(Fraction(frame_rate))
-            except (ValueError, ZeroDivisionError):
-                pass
+            frame_rates.append(frame_rate)
 
     if not frame_rates:
         raise FileNotFoundError(f"No valid r_frame_rate entries found in {probes_dir}")
@@ -94,7 +111,7 @@ def calc_median_fps(source: Path):
         median_rate = (frame_rates[middle - 1] + frame_rates[middle]) / 2
 
     output_path.write_text(
-        f"r_frame_rate={median_rate.numerator}/{median_rate.denominator}\n",
+        f"r_frame_rate={float(median_rate)}\n",
         encoding="utf-8",
     )
     return output_path
@@ -103,7 +120,7 @@ def calc_median_frames(source: Path):
     source = source.expanduser().resolve()
     probes_dir = source / "ffprobes"
     output_path = source / "median_frames.txt"
-    frame_counts: list[int] = []
+    frame_counts: list[Fraction] = []
 
     with os.scandir(probes_dir) as entries:
         for entry in entries:
@@ -111,17 +128,24 @@ def calc_median_frames(source: Path):
                 continue
 
             properties = parse_probe_file(Path(entry.path))
-            frame_count = properties.get("nb_read_frames")
-            if frame_count is None:
-                continue
+            frame_count = properties.get("nb_frames")
+            if frame_count not in (None, "", "N/A"):
+                try:
+                    frame_counts.append(Fraction(frame_count))
+                    continue
+                except (ValueError, ZeroDivisionError):
+                    pass
 
             try:
-                frame_counts.append(int(frame_count))
-            except ValueError:
+                duration = Fraction(properties["duration"])
+                frame_rate = get_first_valid_fraction(properties, "avg_frame_rate", "r_frame_rate")
+                if frame_rate is not None and duration > 0:
+                    frame_counts.append(duration * frame_rate)
+            except (KeyError, ValueError, ZeroDivisionError):
                 pass
 
     if not frame_counts:
-        raise FileNotFoundError(f"No valid nb_read_frames entries found in {probes_dir}")
+        raise FileNotFoundError(f"No valid frame count metadata found in {probes_dir}")
 
     frame_counts.sort()
     middle = len(frame_counts) // 2
@@ -130,13 +154,8 @@ def calc_median_frames(source: Path):
     else:
         median_frames = Fraction(frame_counts[middle - 1] + frame_counts[middle], 2)
 
-    if median_frames.denominator == 1:
-        value = str(median_frames.numerator)
-    else:
-        value = f"{median_frames.numerator}/{median_frames.denominator}"
-
     output_path.write_text(
-        f"nb_read_frames={value}\n",
+        f"nb_read_frames={float(median_frames)}\n",
         encoding="utf-8",
     )
     return output_path

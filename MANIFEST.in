@@ -1,0 +1,3 @@
+include run_faceless.spec
+include assets/logo.ico
+include assets/logo.png

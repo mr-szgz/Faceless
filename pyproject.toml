@@ -10,7 +10,8 @@ dependencies = [
     "ultralytics",
     "tqdm",
     "argparse",
-    "opencv-python>=4.13.0.92",
+    "scikit-image",
+    "opencv-python",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +20,13 @@ dev = [
     "pip",
     "cibuildwheel",
     "pyinstaller>=6"
+]
+gpu = [
+    # Install with: pip install ".[gpu]" --extra-index-url https://download.pytorch.org/whl/cu128
+    "numpy",
+    "torch",
+    "torchvision",
+    "onnxruntime-gpu",
 ]
 
 [project.scripts]

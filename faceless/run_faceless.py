@@ -8,6 +8,16 @@ from faceless.config import DEPENDENCIES_DIR, set_config, get_config
 import os
 env = {**os.environ, "PYTHONNOUSERSITE": "1", "PYTHONPATH": ""}
 
+
+def _resolve_context_menu_icon(launcher_exe: Path) -> Path:
+    if getattr(sys, "frozen", False):
+        return launcher_exe
+
+    repo_icon = Path(__file__).resolve().parent.parent / "assets" / "logo.ico"
+    if repo_icon.exists():
+        return repo_icon
+    return launcher_exe
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="run-faceless")
     parser.add_argument(
@@ -35,6 +45,12 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="set_config_value",
         metavar="<section>.<option>=<value>",
         help="Update a config option value in ~/.faceless/faceless.ini",
+    )
+    parser.add_argument(
+        "-Force",
+        "--force",
+        dest="force_reinstall",
+        help="adds --force-reinstall"
     )
     return parser
 
@@ -130,8 +146,9 @@ def main(argv: list[str] | None = None) -> int:
             [str(pyexe), "-m", "pip", "install", "--upgrade", "pip"],
             env=env,
         )
+        # check if this machine can support Cuda12 and if torch cpu is installed then uninstall it and allow below to isntall cua enabled torch properly
         subprocess.check_call(
-            [str(pyexe), "-m", "pip", "install", "--index-url", "https://download.pytorch.org/whl/cu128", "torch", "torchvision", "torchaudio"],
+            [str(pyexe), "-m", "pip", "install", "--index-url", "https://download.pytorch.org/whl/cu128", "torch", "torchvision", "torchaudio", "--force-reinstall" if args.force_reinstall else ""],
             env=env,
         )
         subprocess.check_call(
@@ -156,12 +173,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.install_menu:
         import winreg
         launcher_exe = Path(sys.executable).resolve()
+        launcher_icon = _resolve_context_menu_icon(launcher_exe)
         command_value = f"\"{launcher_exe}\" \"%1\""
         with winreg.CreateKeyEx(
             winreg.HKEY_CURRENT_USER, r"Software\Classes\Directory\shell\Faceless", 0, winreg.KEY_SET_VALUE
         ) as key:
             winreg.SetValueEx(key, "", 0, winreg.REG_SZ, "Run Faceless")
-            winreg.SetValueEx(key, "Icon", 0, winreg.REG_SZ, str(launcher_exe))
+            winreg.SetValueEx(key, "Icon", 0, winreg.REG_SZ, str(launcher_icon))
         with winreg.CreateKeyEx(
             winreg.HKEY_CURRENT_USER,
             r"Software\Classes\Directory\shell\Faceless\command",
