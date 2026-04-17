@@ -22,6 +22,8 @@ def set_config(section: str, option: str, value):
     cfg.set(str(section).strip(), str(option).strip(), value)
     with FACELESS_CONFIG_FILE.open("w", encoding="utf-8") as handle:
         cfg.write(handle)
+        
+
 
 def get_config(section: str, option: str, fallback: Any | None = None):
     cfg.read_dict({
@@ -51,3 +53,34 @@ def get_config(section: str, option: str, fallback: Any | None = None):
         cfg.write(handle)
     cfg.read(str(FACELESS_CONFIG_FILE), encoding="utf-8")
     return cfg.get(section, option)
+
+# Tokyonight colors — Rich-compatible names (closest web-standard matches)
+Colors = {
+    # primary
+    "primary_fg": "grey74",
+    "primary_bg": "grey7",
+    # cursor
+    "cursor_text": "grey7",
+    "cursor_cursor": "grey74",
+    # selection
+    "selection_text": "grey74",
+    "selection_bg": "grey23",
+    # normal
+    "normal_black": "grey15",
+    "normal_red": "indian_red",
+    "normal_green": "pale_green3",
+    "normal_yellow": "sandy_brown",
+    "normal_blue": "steel_blue1",
+    "normal_magenta": "plum2",
+    "normal_cyan": "dark_slate_gray3",
+    "normal_white": "grey78",
+    # bright
+    "bright_black": "grey42",
+    "bright_red": "indian_red1",
+    "bright_green": "dark_olive_green3",
+    "bright_yellow": "sandy_brown",
+    "bright_blue": "steel_blue1",
+    "bright_magenta": "plum2",
+    "bright_cyan": "dark_slate_gray3",
+    "bright_white": "bright_white",
+}

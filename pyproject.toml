@@ -7,17 +7,19 @@ name = "faceless"
 version = "0.8.0"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-    "pip",
-    "ultralytics",
-    "tqdm",
     "argparse",
-    "scikit-image",
     "huggingface_hub",
-    "opencv-python",
     "numpy",
+    "onnxruntime-gpu",
+    "opencv-python",
+    "pip",
+    "rich",
+    "scikit-image",
     "torch",
     "torchvision",
-    "onnxruntime-gpu",
+    "tqdm",
+    "ultralytics @ git+https://github.com/electblake/ultralytics.git@fix-24257-square-bracket-globs", # revert once issue resolved (https://github.com/ultralytics/ultralytics/issues/24257)
+    "insightface"
 ]
 
 [project.optional-dependencies]

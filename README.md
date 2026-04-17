@@ -1,6 +1,14 @@
 # Faceless
 
-Faceless analyzes images and video with Ultralytics YOLO, then moves media that does not contain both a face (class `264`) and at least one required match class (default: `216,594`). Non-matching files land in the output directory (default: `faceless`) and are grouped into label-named subfolders when labels are available.
+Faceless analyzes images and video with Ultralytics YOLO and automatically labels and organizes media by labels
+
+**Features**
+
+- YOLO with `yolov8n-oiv7` (pretrained OpenImagesV7 YOLO). See [OpenImagesV7.yaml](.\faceless\datasets\OpenImagesV7.yaml).
+- Low Quality images are moved into `./Top Label Name/.` where Top Label is one of [OpenImagesV7.yaml](.\faceless\datasets\OpenImagesV7.yaml). <br />
+_this is currently images without a visible face (class id `264`) and not at least one of the `-RequireIds/--require-ids` (default classes `216,594`)_
+- Automatically saves crops to `./Faces`
+- Insightface to group faces into `./Faces/person_$hash/.` where $hash is calculated md5 of the embeddings grouped.
 
 ## Install
 

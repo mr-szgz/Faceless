@@ -35,7 +35,7 @@ try:
     app.prepare(ctx_id=0)
 except Exception:
     # CPU-only fallback when CUDA initialization is unavailable.
-    print(f"[warn] CUDA FAILED CPU-ONLY MODE")
+    print(f"> [warn] CUDA FAILED CPU-ONLY MODE")
     app.prepare(ctx_id=-1)
 
 class FaceCluster(TypedDict):

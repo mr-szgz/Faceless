@@ -42,12 +42,14 @@ try {
     
     $whlDir = Join-Path $outputDir "whl"
     New-Item -ItemType Directory -Path $whlDir -Force | Out-Null
+
     uv run python -m pip install insightface
     uv run python -m pip wheel insightface --wheel-dir $whlDir
 
     $insightFaceWhl = Get-ChildItem -LiteralPath $whlDir -Filter "insightface-*.whl" | Select-Object -First 1
-    
-    Write-Host "Build artifacts:"
+    $tags = $insightFaceWhl.BaseName -split '-'
+    Write-Host "Built insightface: $($tags[1]); python $($tags[2]); platform $($tags[4])"
+    Write-Host "Built artifacts:"
     Get-ChildItem -LiteralPath $outputDir -File | Sort-Object Name | ForEach-Object {
         Write-Host " - $($_.Name)"
     }

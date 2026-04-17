@@ -1,21 +1,49 @@
 #!/usr/bin/env python3
 import argparse
-import json
+import glob
 import shutil
 import sys
 from pathlib import Path
-
 from ultralytics import YOLO
-from faceless.config import get_config, DEPENDENCIES_DIR, DEFAULT_YOLO_MATCH_CLASSES, DEFAULT_YOLO_FACE_CLASSES, DEFAULT_MODEL_NAME
 from ultralytics.utils.downloads import attempt_download_asset
 from ultralytics.utils.plotting import save_one_box
-from faceless.insightface import cluster_faces
+
+from faceless.config import __version__, get_config, DEPENDENCIES_DIR, DEFAULT_YOLO_MATCH_CLASSES, DEFAULT_YOLO_FACE_CLASSES, DEFAULT_MODEL_NAME
 
 MISSES_DIR_NAME = "Unknown"
 yolo_supported_images = ['jpeg', 'webp', 'jpg', 'png', 'dng', 'tiff', 'tif', 'jpeg2000', 'heif', 'avif', 'heic', 'jp2', 'bmp', 'mpo']
 yolo_supported_videos = ['wmv', 'mov', 'avi', 'm4v', 'ts', 'mkv', 'gif', 'mp4', 'mpeg', 'asf', 'mpg', 'webm']
 
+from rich.console import Console
+from rich.theme import Theme
+
+custom_theme = Theme({
+    "default": "grey78"
+})
+console = Console(theme=custom_theme)
+
+def print_app_header():
+    import platform
+    import torch
+    from importlib.metadata import version
+    ultralytics_name = version('ultralytics')
+    numpy_name = version('numpy')
+    insightface_name = version('insightface')
+    onnxruntime_name = version('onnxruntime-gpu')
+    torch_name = torch.__version__
+    cuda_name = f"CUDA {torch.version.cuda}" if torch.cuda.is_available() else "None"
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU-Only"
+    
+    console.rule(f"Faceless v.{__version__}", style="bold steel_blue1")
+    console.print(f"analyzes images and video with Ultralytics YOLO and automatically labels and organizes media.", style="dim", justify="center")
+    console.print("-", style="dim", justify="center")
+    console.print(f"python {platform.python_version()}; {platform.system()}-{platform.machine()}-{platform.architecture()}; torch {torch_name}; CUDA {cuda_name} on {gpu_name}", style="dim", justify="center")
+    console.print("-", style="dim", justify="center")
+    console.print(f"numpy {numpy_name}; ultralytics {ultralytics_name}; insightface {insightface_name}; onnxruntime {onnxruntime_name};", style="dim", justify="center")
+    console.rule(f"", style="bold steel_blue1")
+
 def main() -> None:
+    print_app_header()
     parser = argparse.ArgumentParser(prog="faceless")
     parser.add_argument(
         "path", nargs="?", help="Source directory containing videos/images"
@@ -52,8 +80,8 @@ def main() -> None:
 
     args = parser.parse_args(sys.argv[1:])
     
-    sources_path = Path(args.path).expanduser().resolve()
-    labels_path = sources_path / output_folder / "labels"
+    sources_path = Path(args.path)
+    labels_path = sources_path / output_folder / 'labels'
     
     dependencies = Path(str(get_config("project", "dependencies", DEPENDENCIES_DIR)))
     print(f"[info] Configured dependencies {dependencies}")
@@ -67,11 +95,7 @@ def main() -> None:
         else:
             needs_labels = False
     
-    model_name = str(get_config("detect", "model_name", DEFAULT_MODEL_NAME))
-    model_path = attempt_download_asset(dependencies / "models" / model_name)
-    print(f"[ok] model {model_path} ")
-    model = YOLO(Path(model_path).resolve())
-    model_class_names = {int(key): str(value) for key, value in model.names.items()}
+
     
     # super lazy get config and split csv class ints
     face_classes = {int(part.strip()) for part in str(get_config("detect", "yolo_face_classes", DEFAULT_YOLO_FACE_CLASSES)).split(",") if part.strip()}
@@ -86,16 +110,27 @@ def main() -> None:
     all_labels: dict[int, int] = {}
     
     if needs_labels:
-        print(f"[info] Generating labels in {labels_path} needs_labels={needs_labels}")
+        model_name = str(get_config("detect", "model_name", DEFAULT_MODEL_NAME))
+        model_path = dependencies / 'models' / model_name
+        print(f"[label] get model {model_path}")
+        model_path = attempt_download_asset(model_path)
+        print(f"[label] set-up prediction model {model_name} for {sources_path} with model {model_path}")
+        model = YOLO(Path(model_path).resolve())
+        model_class_names = {int(key): str(value) for key, value in model.names.items()}
 
         # labels_path.mkdir(parents=True, exist_ok=True)
         half = False
         batch = 1
         
         import torch
-        print(f"[check] torch available: {torch.cuda.is_available()} {torch.__version__}")
-        print(f"[debug] half={half} (FP16 inference)")
-        print(f"[debug] batch={batch}")
+        import os
+        print(f"[label] Generating labels in {labels_path} needs_labels={needs_labels}")
+        print(f"[label] torch available: {torch.cuda.is_available()} {torch.__version__}")
+        print(f"[label] half={half} (FP16 inference)")
+        print(f"[label] batch={batch}")
+        if not os.access(sources_path, os.R_OK):
+            print(f"[label] Warning! {sources_path} is locked or inaccessible.")
+        print(f"[label] sourcing media from {str(sources_path)}..")
         results = model(
             source=str(sources_path),
             conf=args.conf_float,
@@ -118,12 +153,10 @@ def main() -> None:
                 detected_labels: dict[int, int] = {}
                 
                 boxes = result.boxes  # Boxes object for bounding box outputs
-                # speed = result.speed
-                # (Path(result.save_dir) / "speeds").mkdir(exist_ok=True)
-                # speeds_file = (Path(result.save_dir) / "speeds" / (Path(result.path).stem + ".json"))
-                # print(f"> saving speeds {speeds_file}")
-                # speeds_file.write_text(json.dumps(speed))
-        
+                
+                if not os.access(Path(result.path), os.R_OK):
+                    print(f"[label] Warning! {sources_path} is locked or inaccessible.")
+                
                 for i, c in enumerate(boxes.cls):
                     class_int = int(c)
                     detected_classes.add(class_int)
@@ -135,10 +168,13 @@ def main() -> None:
                     
                     if class_int in face_classes and not args.skip_faces:
                         orig_file = Path(result.path)
+                        # if its an image we can save Face immediately
                         if orig_file.is_file() and orig_file.suffix.lstrip('.').lower() in yolo_supported_images:
                             face_dir = sources_path / "Faces"
                             face_dir.mkdir(exist_ok=True)
                             face_file = face_dir / f"{orig_file.stem}_face{i}{orig_file.suffix}"
+                            
+                            # TODO: use built in boxes[c].orig_shape (orig_shape	tuple[int, int]	Original image shape in (height, width) format.) read S:\Spaces\Image-Classification\Faceless\.agents\references\ultralytics-docs\ultralytics_boxes.md for details
                             from PIL import Image
                             import hashlib
                             imagedata = Image.open(orig_file)
@@ -164,7 +200,7 @@ def main() -> None:
                     continue
                 
                 if not detected_labels:
-                    missed_file = Path(sources_path) / MISSES_DIR_NAME / Path(result.path).name
+                    missed_file = sources_path / MISSES_DIR_NAME / Path(result.path).name
                     missed_file.parent.mkdir(exist_ok=True, parents=True)
                     miss_count += 1
                     print(f"> NO labels detected {detected_labels}. Move to {missed_file}")
@@ -175,7 +211,7 @@ def main() -> None:
                 top_classes = [model_class_names[max(detected_labels, key=detected_labels.get)]] # pyright: ignore[reportCallIssue, reportArgumentType]
                 top_class_name = top_classes[0]
                 
-                move_file = Path(sources_path) / Path(top_class_name) / Path(result.path).name # pyright: ignore[reportArgumentType]
+                move_file = sources_path / Path(top_class_name) / Path(result.path).name # pyright: ignore[reportArgumentType]
                 move_file.parent.mkdir(exist_ok=True, parents=True)
                 moved_count += 1
                 print(f"> MOVE to most common label ({move_file})")
@@ -183,12 +219,12 @@ def main() -> None:
                 if move_file.exists():
                     print(f"[ok] {move_file}")
                 if Path(result.path).exists():
-                    print(f"[warn] !!FILE WAS NOT MOVED!! {result.path}")
+                    print(f"> [warn] !!FILE WAS NOT MOVED!! {result.path}")
                     missed_moves.append((result.path, move_file))
                 print("")
                 continue
             except Exception as exc:
-                print(f"[error] FAIL to process {result.path}: {exc}")
+                print(f"> [error] FAIL to process {result.path}: {exc}")
                 import traceback
                 traceback.print_exc()
                 error_count += 1
@@ -198,7 +234,8 @@ def main() -> None:
     print("")
     
     if not args.skip_faces:
-        cluster_faces(sources_path / "Faces")
+        from faceless.insightface import cluster_faces
+        cluster_faces(sources_path / 'Faces')
 
     print(f"{moved_count} organized into {len(all_labels)} labels")
     print(f"{miss_count} without labels (moved to {sources_path / MISSES_DIR_NAME})")

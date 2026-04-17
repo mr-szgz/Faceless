@@ -142,10 +142,11 @@ def main(argv: list[str] | None = None) -> int:
             [str(pyexe), "-m", "pip", "install", "--index-url", "https://download.pytorch.org/whl/cu128", "torch", "torchvision", "torchaudio", "--force-reinstall" if args.force_reinstall else ""],
             env=env,
         )
-        insightface_whl = ".\\dist\\whl\\insightface-0.7.3-cp310-cp310-win_amd64.whl"
+        
+        insightface_whl = str(sorted(Path("dist/whl").glob("insightface-*.whl"))[0])
         subprocess.check_call(
             [str(pyexe), "-m", "pip", "install", "numpy", "onnxruntime-gpu", "triton-windows>=3.5.0.post21",
-                                                "ultralytics", "tqdm", "argparse", "opencv-python", "scikit-image", insightface_whl, "huggingface_hub" ], env=env)
+                                                "ultralytics", "tqdm", "argparse", "rich", "opencv-python", "scikit-image", insightface_whl, "huggingface_hub" ], env=env)
         subprocess.check_call(
             [str(pyexe), "-m", "pip", "uninstall", "-y", "faceless"], env=env,
         )

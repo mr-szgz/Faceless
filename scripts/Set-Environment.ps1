@@ -11,8 +11,8 @@ mise use powershell@7
 $env:PATH = "$(mise where uv)" + [IO.Path]::PathSeparator + $env:PATH
 $env:PATH = "$(mise where powershell)" + [IO.Path]::PathSeparator + $env:PATH
 
+$env:VENV = Join-Path -Path $Prefix -ChildPath ".venv"
 $env:UV_PROJECT_ENVIRONMENT = $env:VENV
-$env:VENV = Join-Path -Path $Prefix -ChildPath "dependencies/venv"
 $env:PATH = (Join-Path -Path $env:VENV -ChildPath "Scripts") + [IO.Path]::PathSeparator + $env:PATH 
 $env:PATH = (Join-Path -Path $env:VENV -ChildPath "Scripts") + [IO.Path]::PathSeparator + $env:PATH 
 
