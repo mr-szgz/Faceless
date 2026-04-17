@@ -151,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
             [str(pyexe), "-m", "pip", "uninstall", "-y", "faceless"], env=env,
         )
         subprocess.check_call([str(pyexe), "-m", "pip", "install",
-                               r"S:\Spaces\Image-Classification\Faceless\dist\faceless-0.8.0-py3-none-any.whl",
+                               r"S:\Spaces\Image-Classification\Faceless\dist\faceless-0.9.0-py3-none-any.whl",
                                "--no-warn-script-location"
                             ], env=env)
         # subprocess.check_call([str(pyexe), "-m", "faceless", "--help"])

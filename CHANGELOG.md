@@ -11,6 +11,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-17
+### Added
+- Add `-SkipFaces`/`--skip-faces` to skip saving face crops during processing.
+- Add InsightFace-based face clustering into `Faces/person_<hash>/` directories.
+- Add ffprobe utilities for media metadata dumps and median framerate/frame-count calculations.
+
+### Changed
+- Replace label-text-file driven matching with streaming Ultralytics `Results` processing for per-result class handling.
+- Save YOLO crops during detection and move unmatched media into label-named folders with `Unknown` fallback when no labels are detected.
+- Print Rich-based runtime header/status output with detected dependency versions and runtime environment details.
+- Support overriding `FACELESS_CONFIG_DIR` via environment variable.
+- Expand runtime dependencies for face clustering and richer output (`insightface`, `onnxruntime-gpu`, `torch`, `torchvision`, `rich`, `scikit-image`, `huggingface_hub`), and pin Ultralytics to the square-bracket glob fix branch.
+- Extend `run-faceless --install` bootstrap flow to provision ffmpeg/ffprobe and CUDA-targeted PyTorch dependencies.
+
 ## [0.8.0] - 2026-04-07
 ### Added
 - Install the full Faceless app from `run-faceless --install`, including embedded Python and dependencies.
